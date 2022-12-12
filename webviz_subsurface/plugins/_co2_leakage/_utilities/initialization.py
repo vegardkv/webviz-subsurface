@@ -1,3 +1,5 @@
+import logging
+
 from typing import Dict, List, Optional
 
 from webviz_config import WebvizSettings
@@ -13,6 +15,8 @@ from webviz_subsurface.plugins._co2_leakage._utilities.generic import MapAttribu
 from webviz_subsurface.plugins._map_viewer_fmu._tmp_well_pick_provider import (
     WellPickProvider,
 )
+
+LOGGER = logging.getLogger(__name__)
 
 
 def init_map_attribute_names(
@@ -59,11 +63,13 @@ def init_co2_containment_table_providers(
     ensemble_roots: Dict[str, str],
     table_rel_path: str,
 ) -> Dict[str, EnsembleTableProvider]:
-    return {
-        ens: (
-            EnsembleTableProviderFactory.instance().create_from_per_realization_csv_file(
+    providers = {}
+    factory = EnsembleTableProviderFactory.instance()
+    for ens, ens_path in ensemble_roots.items():
+        try:
+            providers[ens] = factory.create_from_per_realization_csv_file(
                 ens_path, table_rel_path
             )
-        )
-        for ens, ens_path in ensemble_roots.items()
-    }
+        except (KeyError, ValueError) as e:
+            LOGGER.warning(f"Did not load table for ensemble \"{ens}\" with error {e}")
+    return providers
