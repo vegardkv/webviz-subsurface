@@ -20,33 +20,40 @@ class _Columns(Enum):
 def _read_dataframe(
     table_provider: EnsembleTableProvider, realization: int
 ) -> pandas.DataFrame:
-    return table_provider.get_column_data(
-        ["date", "co2_inside", "co2_outside"], [realization]
-    )
+    df = table_provider.get_column_data(table_provider.column_names(), [realization])
+    for c in df.columns:
+        if c.startswith("total"):
+            # Convert from kg to M tons
+            df[c] /= 1e6
+    return df
 
 
 def _read_terminal_co2_volumes(
     table_provider: EnsembleTableProvider, realizations: List[int]
 ) -> pandas.DataFrame:
-    records = []
+    records = {
+        "real": [],
+        "amount": [],
+        "containment": [],
+        "phase": [],
+        "sort_key": []
+    }
     for real in realizations:
         df = _read_dataframe(table_provider, real)
         last = df.iloc[np.argmax(df["date"])]
         label = str(real)
-        records += [
-            (label, last["co2_inside"], "inside", 0.0),
-            (label, last["co2_outside"], "outside", last["co2_outside"]),
+        records["real"] += [label] * 4
+        records["amount"] += [
+            last["total_aqueous_inside"],
+            last["total_gas_inside"],
+            last["total_aqueous_outside"],
+            last["total_gas_outside"],
         ]
-    df = pandas.DataFrame.from_records(
-        records,
-        columns=[
-            _Columns.REALIZATION.value,
-            _Columns.VOLUME.value,
-            _Columns.CONTAINMENT.value,
-            _Columns.VOLUME_OUTSIDE.value,
-        ],
-    )
-    df.sort_values(_Columns.VOLUME_OUTSIDE.value, inplace=True, ascending=True)
+        records["containment"] += ["inside", "inside", "outside", "outside"]
+        records["phase"] += ["aqueous", "gas", "aqueous", "gas"]
+        records["sort_key"] += [last["total_gas_outside"]] * 4
+    df = pandas.DataFrame.from_dict(records)
+    df.sort_values("sort_key", inplace=True, ascending=True)
     return df
 
 
@@ -61,6 +68,17 @@ def _read_co2_volumes(
     )
 
 
+def _adjust_figure(
+    fig: go.Figure
+):
+    fig.layout.title.x = 0.5
+    fig.layout.paper_bgcolor = "rgba(0,0,0,0)"
+    fig.layout.margin.b = 10
+    fig.layout.margin.t = 60
+    fig.layout.margin.l = 10
+    fig.layout.margin.r = 10
+
+
 def generate_co2_volume_figure(
     table_provider: EnsembleTableProvider,
     realizations: List[int],
@@ -68,12 +86,16 @@ def generate_co2_volume_figure(
     df = _read_terminal_co2_volumes(table_provider, realizations)
     fig = px.bar(
         df,
-        y=_Columns.REALIZATION.value,
-        x=_Columns.VOLUME.value,
-        color=_Columns.CONTAINMENT.value,
+        y="real",
+        x="amount",
+        color="containment",
+        pattern_shape="phase",
         title="End-state CO2 containment",
         orientation="h",
-        category_orders={_Columns.CONTAINMENT.value: ["outside", "inside"]},
+        category_orders={
+            "containment": ["outside", "inside"],
+            "phase": ["gas", "aqueous"],
+        },
         color_discrete_sequence=["#dd4300", "#006ddd"],
     )
     fig.layout.legend.title.text = ""
@@ -81,12 +103,8 @@ def generate_co2_volume_figure(
     fig.layout.legend.y = -0.3
     fig.layout.yaxis.title = "Realization"
     fig.layout.xaxis.exponentformat = "power"
-    fig.layout.xaxis.title = "Mass [kg]"
-    fig.layout.paper_bgcolor = "rgba(0,0,0,0)"
-    fig.layout.margin.b = 10
-    fig.layout.margin.t = 60
-    fig.layout.margin.l = 10
-    fig.layout.margin.r = 10
+    fig.layout.xaxis.title = "M tons CO2"
+    _adjust_figure(fig)
     return fig
 
 
@@ -96,10 +114,6 @@ def generate_co2_time_containment_figure(
 ) -> go.Figure:
     df = _read_co2_volumes(table_provider, realizations)
     df.sort_values(by="date", inplace=True)
-    df["date"] = df["date"].astype(str)
-    dates = df["date"].str[:4] + "-" + df["date"].str[4:6] + "-" + df["date"].str[6:]
-    df["dt"] = dates
-    df["co2_total"] = df["co2_inside"] + df["co2_outside"]
     fig = go.Figure()
     colors = px.colors.qualitative.Plotly
     # Generate dummy scatters for legend entries
@@ -111,26 +125,39 @@ def generate_co2_time_containment_figure(
     for rlz, color in zip(realizations, itertools.cycle(colors)):
         sub_df = df[df["realization"] == rlz]
         common_args = dict(
-            x=sub_df["dt"],
+            x=sub_df["date"],
             hovertemplate="%{x}: %{y}<br>Realization: %{meta[0]}",
             meta=[rlz],
             marker_color=color,
             showlegend=False,
         )
-        fig.add_scatter(y=sub_df["co2_outside"], **outside_args, **common_args)
-        fig.add_scatter(y=sub_df["co2_total"], **total_args, **common_args)
+        fig.add_scatter(y=sub_df["total_outside"], **outside_args, **common_args)
+        fig.add_scatter(y=sub_df["total"], **total_args, **common_args)
     fig.layout.legend.orientation = "h"
     fig.layout.legend.title.text = ""
-    fig.layout.legend.yanchor = "bottom"
-    fig.layout.legend.y = 1.02
-    fig.layout.legend.xanchor = "right"
-    fig.layout.legend.x = 1
-    fig.layout.xaxis.title = "Time (date)"
-    fig.layout.yaxis.title = "Mass [kg]"
-    fig.layout.paper_bgcolor = "rgba(0,0,0,0)"
-    fig.layout.margin.b = 10
-    fig.layout.margin.t = 60
-    fig.layout.margin.l = 10
-    fig.layout.margin.r = 10
-    fig.layout.yaxis.range = (0, 1.05 * df["co2_total"].max())
+    # fig.layout.legend.yanchor = "bottom"
+    fig.layout.legend.y = -0.3
+    # fig.layout.legend.xanchor = "right"
+    # fig.layout.legend.x = 1
+    fig.layout.title = "Contained CO2"
+    fig.layout.xaxis.title = "Time"
+    fig.layout.yaxis.title = "M tons CO2"
+    fig.layout.yaxis.exponentformat = "none"
+    fig.layout.yaxis.range = (0, 1.05 * df["total"].max())
+    _adjust_figure(fig)
+    return fig
+
+
+def generate_co2_mobile_phase_figure(
+    table_provider: EnsembleTableProvider,
+    realizations: List[int],
+) -> go.Figure:
+    df = _read_co2_volumes(table_provider, realizations)
+    df.sort_values(by="date", inplace=True)
+    fig = px.line(df, x="date", y="total_gas_outside", line_group="realization")
+    fig.layout.title = "Mobile gas outside boundary"
+    fig.layout.yaxis.title = "M tons CO2"
+    fig.layout.yaxis.exponentformat = "none"
+    fig.layout.xaxis.title = "Time"
+    _adjust_figure(fig)
     return fig

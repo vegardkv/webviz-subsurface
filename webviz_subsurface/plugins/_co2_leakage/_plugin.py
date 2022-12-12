@@ -20,7 +20,7 @@ from webviz_subsurface.plugins._co2_leakage._utilities.callbacks import (
 )
 from webviz_subsurface.plugins._co2_leakage._utilities.co2volume import (
     generate_co2_time_containment_figure,
-    generate_co2_volume_figure,
+    generate_co2_volume_figure, generate_co2_mobile_phase_figure,
 )
 from webviz_subsurface.plugins._co2_leakage._utilities.fault_polygons import (
     FaultPolygonsHandler,
@@ -171,14 +171,17 @@ class CO2Leakage(WebvizPluginABC):
         @callback(
             Output(self._view_component(MapViewElement.Ids.BAR_PLOT), "figure"),
             Output(self._view_component(MapViewElement.Ids.TIME_PLOT), "figure"),
+            Output(self._view_component(MapViewElement.Ids.MOBILE_PHASE_PLOT), "figure"),
             Output(self._view_component(MapViewElement.Ids.BAR_PLOT), "style"),
             Output(self._view_component(MapViewElement.Ids.TIME_PLOT), "style"),
+            Output(self._view_component(MapViewElement.Ids.MOBILE_PHASE_PLOT), "style"),
             Input(self._settings_component(ViewSettings.Ids.ENSEMBLE), "value"),
         )
-        def update_graphs(ensemble: str) -> Tuple[go.Figure, go.Figure, Dict, Dict]:
+        def update_graphs(ensemble: str):
             style = {"display": "none"}
             fig0 = dash.no_update
             fig1 = dash.no_update
+            fig2 = dash.no_update
             if ensemble in self._co2_table_providers:
                 fig_args = (
                     self._co2_table_providers[ensemble],
@@ -187,10 +190,12 @@ class CO2Leakage(WebvizPluginABC):
                 try:
                     fig0 = generate_co2_volume_figure(*fig_args)
                     fig1 = generate_co2_time_containment_figure(*fig_args)
+                    fig2 = generate_co2_mobile_phase_figure(*fig_args)
                     style = {}
                 except KeyError as e:
                     warnings.warn(f"Could not generate CO2 figures: {e}")
-            return fig0, fig1, style, style
+                    raise e
+            return fig0, fig1, fig2, style, style, style
 
         @callback(
             Output(self._view_component(MapViewElement.Ids.DATE_SLIDER), "marks"),
