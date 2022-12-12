@@ -1,3 +1,5 @@
+import warnings
+
 import dash
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -178,13 +180,16 @@ class CO2Leakage(WebvizPluginABC):
             fig0 = dash.no_update
             fig1 = dash.no_update
             if ensemble in self._co2_table_providers:
-                style = {}
                 fig_args = (
                     self._co2_table_providers[ensemble],
                     self._co2_table_providers[ensemble].realizations(),
                 )
-                fig0 = generate_co2_volume_figure(*fig_args)
-                fig1 = generate_co2_time_containment_figure(*fig_args)
+                try:
+                    fig0 = generate_co2_volume_figure(*fig_args)
+                    fig1 = generate_co2_time_containment_figure(*fig_args)
+                    style = {}
+                except KeyError as e:
+                    warnings.warn(f"Could not generate CO2 figures: {e}")
             return fig0, fig1, style, style
 
         @callback(
