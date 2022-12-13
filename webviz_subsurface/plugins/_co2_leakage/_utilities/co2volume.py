@@ -8,6 +8,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 from webviz_subsurface._providers import EnsembleTableProvider
+from webviz_subsurface.plugins._co2_leakage._utilities.generic import Co2Scale
 
 
 class _Columns(Enum):
@@ -18,18 +19,23 @@ class _Columns(Enum):
 
 
 def _read_dataframe(
-    table_provider: EnsembleTableProvider, realization: int
+    table_provider: EnsembleTableProvider, realization: int, scale: Co2Scale,
 ) -> pandas.DataFrame:
     df = table_provider.get_column_data(table_provider.column_names(), [realization])
+    if scale == Co2Scale.KG:
+        return df
+    if scale == scale.MTONS:
+        value = 1e9
+    else:
+        value = df["total"].max()
     for c in df.columns:
         if c.startswith("total"):
-            # Convert from kg to M tons
-            df[c] /= 1e6
+            df[c] /= value
     return df
 
 
 def _read_terminal_co2_volumes(
-    table_provider: EnsembleTableProvider, realizations: List[int]
+    table_provider: EnsembleTableProvider, realizations: List[int], scale: Co2Scale
 ) -> pandas.DataFrame:
     records = {
         "real": [],
@@ -39,7 +45,7 @@ def _read_terminal_co2_volumes(
         "sort_key": []
     }
     for real in realizations:
-        df = _read_dataframe(table_provider, real)
+        df = _read_dataframe(table_provider, real, scale)
         last = df.iloc[np.argmax(df["date"])]
         label = str(real)
         records["real"] += [label] * 4
@@ -58,11 +64,11 @@ def _read_terminal_co2_volumes(
 
 
 def _read_co2_volumes(
-    table_provider: EnsembleTableProvider, realizations: List[int]
+    table_provider: EnsembleTableProvider, realizations: List[int], scale: Co2Scale
 ) -> pandas.DataFrame:
     return pandas.concat(
         [
-            _read_dataframe(table_provider, real).assign(realization=real)
+            _read_dataframe(table_provider, real, scale).assign(realization=real)
             for real in realizations
         ]
     )
@@ -82,8 +88,9 @@ def _adjust_figure(
 def generate_co2_volume_figure(
     table_provider: EnsembleTableProvider,
     realizations: List[int],
+    scale: Co2Scale,
 ) -> go.Figure:
-    df = _read_terminal_co2_volumes(table_provider, realizations)
+    df = _read_terminal_co2_volumes(table_provider, realizations, scale)
     fig = px.bar(
         df,
         y="real",
@@ -103,7 +110,7 @@ def generate_co2_volume_figure(
     fig.layout.legend.y = -0.3
     fig.layout.yaxis.title = "Realization"
     fig.layout.xaxis.exponentformat = "power"
-    fig.layout.xaxis.title = "M tons CO2"
+    fig.layout.xaxis.title = scale.value
     _adjust_figure(fig)
     return fig
 
@@ -111,8 +118,9 @@ def generate_co2_volume_figure(
 def generate_co2_time_containment_figure(
     table_provider: EnsembleTableProvider,
     realizations: List[int],
+    scale: Co2Scale,
 ) -> go.Figure:
-    df = _read_co2_volumes(table_provider, realizations)
+    df = _read_co2_volumes(table_provider, realizations, scale)
     df.sort_values(by="date", inplace=True)
     fig = go.Figure()
     colors = px.colors.qualitative.Plotly
@@ -135,13 +143,10 @@ def generate_co2_time_containment_figure(
         fig.add_scatter(y=sub_df["total"], **total_args, **common_args)
     fig.layout.legend.orientation = "h"
     fig.layout.legend.title.text = ""
-    # fig.layout.legend.yanchor = "bottom"
     fig.layout.legend.y = -0.3
-    # fig.layout.legend.xanchor = "right"
-    # fig.layout.legend.x = 1
     fig.layout.title = "Contained CO2"
     fig.layout.xaxis.title = "Time"
-    fig.layout.yaxis.title = "M tons CO2"
+    fig.layout.yaxis.title = scale.value
     fig.layout.yaxis.exponentformat = "none"
     fig.layout.yaxis.range = (0, 1.05 * df["total"].max())
     _adjust_figure(fig)
@@ -151,12 +156,13 @@ def generate_co2_time_containment_figure(
 def generate_co2_mobile_phase_figure(
     table_provider: EnsembleTableProvider,
     realizations: List[int],
+    scale: Co2Scale,
 ) -> go.Figure:
-    df = _read_co2_volumes(table_provider, realizations)
+    df = _read_co2_volumes(table_provider, realizations, scale)
     df.sort_values(by="date", inplace=True)
     fig = px.line(df, x="date", y="total_gas_outside", line_group="realization")
     fig.layout.title = "Mobile gas outside boundary"
-    fig.layout.yaxis.title = "M tons CO2"
+    fig.layout.yaxis.title = scale.value
     fig.layout.yaxis.exponentformat = "none"
     fig.layout.xaxis.title = "Time"
     _adjust_figure(fig)

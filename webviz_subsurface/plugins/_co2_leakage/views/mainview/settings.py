@@ -12,7 +12,10 @@ from webviz_subsurface._providers.ensemble_surface_provider.ensemble_surface_pro
     SurfaceStatistic,
 )
 from webviz_subsurface.plugins._co2_leakage._utilities.callbacks import property_origin
-from webviz_subsurface.plugins._co2_leakage._utilities.generic import MapAttribute
+from webviz_subsurface.plugins._co2_leakage._utilities.generic import (
+    MapAttribute,
+    Co2Scale,
+)
 
 
 class ViewSettings(SettingsGroupABC):
@@ -28,6 +31,8 @@ class ViewSettings(SettingsGroupABC):
         CM_MAX = "cm-max"
         CM_MIN_AUTO = "cm-min-auto"
         CM_MAX_AUTO = "cm-max-auto"
+
+        CO2_SCALE = "co2-scale"
 
         PLUME_THRESHOLD = "plume-threshold"
         PLUME_SMOOTHING = "plume-smoothing"
@@ -64,6 +69,9 @@ class ViewSettings(SettingsGroupABC):
                 self.register_component_unique_id(self.Ids.CM_MAX),
                 self.register_component_unique_id(self.Ids.CM_MIN_AUTO),
                 self.register_component_unique_id(self.Ids.CM_MAX_AUTO),
+            ),
+            GraphSelectorsLayout(
+                self.register_component_unique_id(self.Ids.CO2_SCALE),
             ),
             ExperimentalFeaturesLayout(
                 self.register_component_unique_id(self.Ids.PLUME_THRESHOLD),
@@ -236,6 +244,23 @@ class MapSelectorLayout(wcc.Selectors):
                     ],
                 )
             ],
+        )
+
+
+class GraphSelectorsLayout(wcc.Selectors):
+    def __init__(self, co2_scale_id: str):
+        super().__init__(
+            label="Graph Settings",
+            open_details=False,
+            children=[
+                "Unit",
+                wcc.Dropdown(
+                    id=co2_scale_id,
+                    options=list(Co2Scale),
+                    value=Co2Scale.MTONS,
+                    clearable=False,
+                )
+            ]
         )
 
 

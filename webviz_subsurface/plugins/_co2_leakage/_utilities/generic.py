@@ -1,4 +1,5 @@
 from enum import Enum
+from webviz_config.utils import StrEnum
 
 
 class MapAttribute(Enum):
@@ -7,3 +8,9 @@ class MapAttribute(Enum):
     MAX_AMFG = "Maximum AMFG"
     SGAS_PLUME = "Plume (SGAS)"
     AMFG_PLUME = "Plume (AMFG)"
+
+
+class Co2Scale(StrEnum):
+    NORMALIZE = "Fraction"
+    MTONS = "M tons"
+    KG = "Kg"

@@ -3,11 +3,10 @@ import warnings
 import dash
 from typing import Any, Dict, List, Optional, Tuple
 
-import plotly.graph_objects as go
 from dash import Dash, Input, Output, State, callback, html
 from dash.exceptions import PreventUpdate
 from webviz_config import WebvizPluginABC, WebvizSettings
-from webviz_config.utils import StrEnum
+from webviz_config.utils import StrEnum, callback_typecheck
 
 from webviz_subsurface._providers import FaultPolygonsServer, SurfaceImageServer
 from webviz_subsurface.plugins._co2_leakage._utilities.callbacks import (
@@ -25,7 +24,8 @@ from webviz_subsurface.plugins._co2_leakage._utilities.co2volume import (
 from webviz_subsurface.plugins._co2_leakage._utilities.fault_polygons import (
     FaultPolygonsHandler,
 )
-from webviz_subsurface.plugins._co2_leakage._utilities.generic import MapAttribute
+from webviz_subsurface.plugins._co2_leakage._utilities.generic import MapAttribute, \
+    Co2Scale
 from webviz_subsurface.plugins._co2_leakage._utilities.initialization import (
     init_co2_containment_table_providers,
     init_map_attribute_names,
@@ -176,8 +176,10 @@ class CO2Leakage(WebvizPluginABC):
             Output(self._view_component(MapViewElement.Ids.TIME_PLOT), "style"),
             Output(self._view_component(MapViewElement.Ids.MOBILE_PHASE_PLOT), "style"),
             Input(self._settings_component(ViewSettings.Ids.ENSEMBLE), "value"),
+            Input(self._settings_component(ViewSettings.Ids.CO2_SCALE), "value"),
         )
-        def update_graphs(ensemble: str):
+        @callback_typecheck
+        def update_graphs(ensemble: str, co2_scale: Co2Scale):
             style = {"display": "none"}
             fig0 = dash.no_update
             fig1 = dash.no_update
@@ -186,6 +188,7 @@ class CO2Leakage(WebvizPluginABC):
                 fig_args = (
                     self._co2_table_providers[ensemble],
                     self._co2_table_providers[ensemble].realizations(),
+                    co2_scale,
                 )
                 try:
                     fig0 = generate_co2_volume_figure(*fig_args)

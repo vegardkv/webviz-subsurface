@@ -84,11 +84,11 @@ class MapViewElement(ViewElementABC):
                         "flexDirection": "row",
                         "justifyContent": "space-evenly",
                     },
-                    children=SummaryGraphLayout(
+                    children=_summary_graph_layout(
                         self.register_component_unique_id(self.Ids.BAR_PLOT),
                         self.register_component_unique_id(self.Ids.TIME_PLOT),
                         self.register_component_unique_id(self.Ids.MOBILE_PHASE_PLOT),
-                    ).children,
+                    ),
                 ),
             ],
             style={
@@ -99,37 +99,31 @@ class MapViewElement(ViewElementABC):
         )
 
 
-class SummaryGraphLayout(html.Div):
-    def __init__(
-        self,
-        bar_plot_id: str,
-        time_plot_id: str,
-        mob_phase_plot_id,
-        **kwargs: Dict,
-    ) -> None:
-        super().__init__(
-            children=[
-                wcc.Graph(
-                    id=bar_plot_id,
-                    figure=go.Figure(),
-                    config={
-                        "displayModeBar": False,
-                    },
-                ),
-                wcc.Graph(
-                    id=time_plot_id,
-                    figure=go.Figure(),
-                    config={
-                        "displayModeBar": False,
-                    },
-                ),
-                wcc.Graph(
-                    id=mob_phase_plot_id,
-                    figure=go.Figure(),
-                    config={
-                        "displayModeBar": False,
-                    },
-                ),
-            ],
-            **kwargs,
-        )
+def _summary_graph_layout(
+    bar_plot_id: str,
+    time_plot_id: str,
+    mob_phase_plot_id: str,
+) -> List:
+    return [
+        wcc.Graph(
+            id=bar_plot_id,
+            figure=go.Figure(),
+            config={
+                "displayModeBar": False,
+            },
+        ),
+        wcc.Graph(
+            id=time_plot_id,
+            figure=go.Figure(),
+            config={
+                "displayModeBar": False,
+            },
+        ),
+        wcc.Graph(
+            id=mob_phase_plot_id,
+            figure=go.Figure(),
+            config={
+                "displayModeBar": False,
+            },
+        ),
+    ]
