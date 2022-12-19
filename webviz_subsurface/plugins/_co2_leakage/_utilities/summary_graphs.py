@@ -34,7 +34,7 @@ def generate_summary_figure(
     fig.add_scatter(
         x=df[columns.time],
         y=df["total"],
-        name=["Total"],
+        name="Total",
     )
     return fig
 

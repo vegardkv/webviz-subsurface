@@ -77,7 +77,7 @@ class CO2Leakage(WebvizPluginABC):
         boundary_file: Optional[str] = None,
         well_pick_file: Optional[str] = None,
         co2_containment_relpath: str = "share/results/tables/co2_volumes.csv",
-        unsmry_relpath: str = "share/results/tables/unsrmy--raw.csv",
+        unsmry_relpath: str = "share/results/tables/unsmry--raw.csv",
         fault_polygon_attribute: str = "dl_extracted_faultlines",
         initial_surface: Optional[str] = None,
         map_attribute_names: Optional[Dict[str, str]] = None,
