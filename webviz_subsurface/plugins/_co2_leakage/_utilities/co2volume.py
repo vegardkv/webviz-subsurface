@@ -160,7 +160,9 @@ def generate_co2_mobile_phase_figure(
 ) -> go.Figure:
     df = _read_co2_volumes(table_provider, realizations, scale)
     df.sort_values(by="date", inplace=True)
-    fig = px.line(df, x="date", y="total_gas_outside", line_group="realization")
+    y_col = "total_gas_outside"
+    df[df[y_col] < 1e-12] = np.nan
+    fig = px.line(df, x="date", y=y_col, line_group="realization")
     fig.layout.title = "Mobile gas outside boundary"
     fig.layout.yaxis.title = scale.value
     fig.layout.yaxis.exponentformat = "none"
