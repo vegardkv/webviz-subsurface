@@ -1,8 +1,11 @@
+import warnings
+
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import geojson
 import numpy as np
+import plotly.graph_objects as go
 
 from webviz_subsurface._providers import (
     EnsembleSurfaceProvider,
@@ -11,13 +14,20 @@ from webviz_subsurface._providers import (
     SurfaceAddress,
     SurfaceImageMeta,
     SurfaceImageServer,
+    EnsembleTableProvider,
 )
 from webviz_subsurface._providers.ensemble_surface_provider.ensemble_surface_provider import (
     SurfaceStatistic,
 )
 from webviz_subsurface._utils.webvizstore_functions import read_csv
 from webviz_subsurface.plugins._co2_leakage._utilities import plume_extent
-from webviz_subsurface.plugins._co2_leakage._utilities.generic import MapAttribute
+from webviz_subsurface.plugins._co2_leakage._utilities.co2volume import \
+    generate_co2_volume_figure, generate_co2_time_containment_figure, \
+    generate_co2_mobile_phase_figure
+from webviz_subsurface.plugins._co2_leakage._utilities.generic import MapAttribute, \
+    Co2Scale
+from webviz_subsurface.plugins._co2_leakage._utilities.summary_graphs import \
+    generate_summary_figure
 from webviz_subsurface.plugins._co2_leakage._utilities.surface_publishing import (
     TruncatedSurfaceAddress,
     publish_and_get_surface_metadata,
@@ -236,6 +246,36 @@ def create_map_layers(
             }
         )
     return layers
+
+
+def generate_containment_figures(
+    table_provider: EnsembleTableProvider,
+    co2_scale: Co2Scale,
+) -> Tuple[go.Figure, go.Figure, go.Figure]:
+    fig_args = (
+        table_provider,
+        table_provider.realizations(),
+        co2_scale,
+    )
+    try:
+        fig0 = generate_co2_volume_figure(*fig_args)
+        fig1 = generate_co2_time_containment_figure(*fig_args)
+        fig2 = generate_co2_mobile_phase_figure(*fig_args)
+    except KeyError as e:
+        warnings.warn(f"Could not generate CO2 figures: {e}")
+        raise e
+    return fig0, fig1, fig2
+
+
+def generate_unsmry_figures(
+    table_provider: EnsembleTableProvider,
+    co2_scale: Co2Scale,
+) -> Tuple[go.Figure]:
+    return (generate_summary_figure(
+        table_provider,
+        table_provider.realizations(),
+        co2_scale,
+    ),)
 
 
 def _parse_polygon_file(filename: str) -> Dict[str, Any]:

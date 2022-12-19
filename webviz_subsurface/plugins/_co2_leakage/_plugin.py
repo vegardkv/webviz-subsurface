@@ -16,18 +16,16 @@ from webviz_subsurface.plugins._co2_leakage._utilities.callbacks import (
     get_plume_polygon,
     property_origin,
     readable_name,
-)
-from webviz_subsurface.plugins._co2_leakage._utilities.co2volume import (
-    generate_co2_time_containment_figure,
-    generate_co2_volume_figure, generate_co2_mobile_phase_figure,
+    generate_containment_figures,
+    generate_unsmry_figures,
 )
 from webviz_subsurface.plugins._co2_leakage._utilities.fault_polygons import (
     FaultPolygonsHandler,
 )
 from webviz_subsurface.plugins._co2_leakage._utilities.generic import MapAttribute, \
-    Co2Scale
+    Co2Scale, GraphSource
 from webviz_subsurface.plugins._co2_leakage._utilities.initialization import (
-    init_co2_containment_table_providers,
+    init_table_provider,
     init_map_attribute_names,
     init_surface_providers,
     init_well_pick_provider,
@@ -52,6 +50,7 @@ class CO2Leakage(WebvizPluginABC):
     * **`well_pick_file`:** Path to a file containing well picks
     * **`co2_containment_relpath`:** Path to a table of co2 containment data (amount of
         CO2 outside/inside a boundary). Relative to each realization.
+    * **`unsmry_relpath`:** Relative path to a csv version of a unified summary file
     * **`fault_polygon_attribute`:** Polygons with this attribute are used as fault
         polygons
     * **`map_attribute_names`:** Dictionary for overriding the default mapping between
@@ -78,6 +77,7 @@ class CO2Leakage(WebvizPluginABC):
         boundary_file: Optional[str] = None,
         well_pick_file: Optional[str] = None,
         co2_containment_relpath: str = "share/results/tables/co2_volumes.csv",
+        unsmry_relpath: str = "share/results/tables/unsrmy--raw.csv",
         fault_polygon_attribute: str = "dl_extracted_faultlines",
         initial_surface: Optional[str] = None,
         map_attribute_names: Optional[Dict[str, str]] = None,
@@ -114,9 +114,13 @@ class CO2Leakage(WebvizPluginABC):
                 for ens in ensembles
             }
             # CO2 containment
-            self._co2_table_providers = init_co2_containment_table_providers(
+            self._co2_table_providers = init_table_provider(
                 self._ensemble_paths,
                 co2_containment_relpath,
+            )
+            self._unsmry_providers = init_table_provider(
+                self._ensemble_paths,
+                unsmry_relpath,
             )
             # Well picks
             self._well_pick_provider = init_well_pick_provider(
@@ -176,29 +180,27 @@ class CO2Leakage(WebvizPluginABC):
             Output(self._view_component(MapViewElement.Ids.TIME_PLOT), "style"),
             Output(self._view_component(MapViewElement.Ids.MOBILE_PHASE_PLOT), "style"),
             Input(self._settings_component(ViewSettings.Ids.ENSEMBLE), "value"),
+            Input(self._settings_component(ViewSettings.Ids.GRAPH_SOURCE), "value"),
             Input(self._settings_component(ViewSettings.Ids.CO2_SCALE), "value"),
         )
         @callback_typecheck
-        def update_graphs(ensemble: str, co2_scale: Co2Scale):
-            style = {"display": "none"}
-            fig0 = dash.no_update
-            fig1 = dash.no_update
-            fig2 = dash.no_update
-            if ensemble in self._co2_table_providers:
-                fig_args = (
+        def update_graphs(ensemble: str, source: GraphSource, co2_scale: Co2Scale):
+            styles = [{"display": "none"}] * 3
+            figs = [dash.no_update] * 3
+            if source == GraphSource.CONTAINMENT and ensemble in self._co2_table_providers:
+                figs = generate_containment_figures(
                     self._co2_table_providers[ensemble],
-                    self._co2_table_providers[ensemble].realizations(),
                     co2_scale,
                 )
-                try:
-                    fig0 = generate_co2_volume_figure(*fig_args)
-                    fig1 = generate_co2_time_containment_figure(*fig_args)
-                    fig2 = generate_co2_mobile_phase_figure(*fig_args)
-                    style = {}
-                except KeyError as e:
-                    warnings.warn(f"Could not generate CO2 figures: {e}")
-                    raise e
-            return fig0, fig1, fig2, style, style, style
+                styles = [{}] * 3
+            elif source == GraphSource.UNSMRY and ensemble in self._unsmry_providers:
+                u_figs = generate_unsmry_figures(
+                    self._unsmry_providers[ensemble],
+                    co2_scale,
+                )
+                figs[:len(u_figs)] = u_figs
+                styles[:len(u_figs)] = [{}] * len(u_figs)
+            return *figs, *styles
 
         @callback(
             Output(self._view_component(MapViewElement.Ids.DATE_SLIDER), "marks"),

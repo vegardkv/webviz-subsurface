@@ -14,3 +14,8 @@ class Co2Scale(StrEnum):
     NORMALIZE = "Fraction"
     MTONS = "M tons"
     KG = "Kg"
+
+
+class GraphSource(StrEnum):
+    UNSMRY = "UNSMRY"
+    CONTAINMENT = "Containment Data"

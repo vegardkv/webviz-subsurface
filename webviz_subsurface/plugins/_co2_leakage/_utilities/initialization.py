@@ -59,7 +59,7 @@ def init_well_pick_provider(
         return None
 
 
-def init_co2_containment_table_providers(
+def init_table_provider(
     ensemble_roots: Dict[str, str],
     table_rel_path: str,
 ) -> Dict[str, EnsembleTableProvider]:
@@ -71,5 +71,7 @@ def init_co2_containment_table_providers(
                 ens_path, table_rel_path
             )
         except (KeyError, ValueError) as e:
-            LOGGER.warning(f"Did not load table for ensemble \"{ens}\" with error {e}")
+            LOGGER.warning(
+                f"Did not load \"{table_rel_path}\" for ensemble \"{ens}\" with error {e}"
+            )
     return providers
