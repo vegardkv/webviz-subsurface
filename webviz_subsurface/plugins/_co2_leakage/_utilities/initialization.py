@@ -25,11 +25,11 @@ def init_map_attribute_names(
     if mapping is None:
         # Based on name convention of xtgeoapp_grd3dmaps:
         return {
-            MapAttribute.MIGRATION_TIME: "MigrationTime",
-            MapAttribute.MAX_SGAS: "max_SGAS",
-            MapAttribute.MAX_AMFG: "max_AMFG",
+            MapAttribute.MIGRATION_TIME: "migrationtime",
+            MapAttribute.MAX_SGAS: "max_sgas",
+            MapAttribute.MAX_AMFG: "max_amfg",
         }
-    return {MapAttribute(key): value for key, value in mapping.items()}
+    return {MapAttribute[key]: value for key, value in mapping.items()}
 
 
 def init_surface_providers(
