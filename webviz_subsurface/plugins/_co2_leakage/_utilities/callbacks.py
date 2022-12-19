@@ -203,10 +203,12 @@ def create_map_layers(
     if license_boundary_file is not None:
         layers.append(
             {
-                "@@type": "FaultPolygonsLayer",
-                "name": "Containment Boundary",
+                "@@type": "GeoJsonLayer",
+                "name": "Containment Polygon",
                 "id": "license-boundary-layer",
                 "data": _parse_polygon_file(license_boundary_file),
+                "stroked": False,
+                "getFillColor": [0, 0, 150, 120],
             }
         )
     if well_pick_provider is not None:
@@ -237,7 +239,13 @@ def create_map_layers(
 
 
 def _parse_polygon_file(filename: str) -> Dict[str, Any]:
-    xyz = read_csv(filename)[["x", "y"]].values
+    df = read_csv(filename)
+    try:
+        xyz = df[["x", "y"]].values
+    except KeyError:
+        # Assume that the first two columns are the x and y coordinates
+        xyz = df.values[:, :2]
+
     as_geojson = {
         "type": "FeatureCollection",
         "features": [
@@ -245,8 +253,8 @@ def _parse_polygon_file(filename: str) -> Dict[str, Any]:
                 "type": "Feature",
                 "properties": {},
                 "geometry": {
-                    "type": "LineString",
-                    "coordinates": xyz.tolist(),
+                    "type": "Polygon",
+                    "coordinates": [xyz.tolist()],
                 },
             }
         ],
