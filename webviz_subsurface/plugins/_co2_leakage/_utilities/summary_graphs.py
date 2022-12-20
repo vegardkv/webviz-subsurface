@@ -26,7 +26,7 @@ def generate_summary_figure(
             name=f"Dissolved ({columns.dissolved})",
             legendgroup="Dissolved",
             showlegend=showlegend,
-            color=cm[0],
+            marker_color=cm[0],
         )
         fig.add_scatter(
             x=gf[columns.time],
@@ -34,7 +34,7 @@ def generate_summary_figure(
             name=f"Trapped ({columns.trapped})",
             legendgroup="Trapped",
             showlegend=showlegend,
-            color=cm[1],
+            marker_color=cm[1],
         )
         fig.add_scatter(
             x=gf[columns.time],
@@ -42,7 +42,7 @@ def generate_summary_figure(
             name=f"Mobile ({columns.mobile})",
             legendgroup="Mobile",
             showlegend=showlegend,
-            color=cm[2],
+            marker_color=cm[2],
         )
         fig.add_scatter(
             x=gf[columns.time],
@@ -50,7 +50,7 @@ def generate_summary_figure(
             name="Total",
             legendgroup="Total",
             showlegend=showlegend,
-            color=cm[3],
+            marker_color=cm[3],
         )
         showlegend = False
     fig.layout.xaxis.title = "Time"
