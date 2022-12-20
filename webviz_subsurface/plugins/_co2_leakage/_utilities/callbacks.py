@@ -280,12 +280,25 @@ def generate_unsmry_figures(
 
 def _parse_polygon_file(filename: str) -> Dict[str, Any]:
     df = read_csv(filename)
-    try:
+    if "x" in df.columns:
         xyz = df[["x", "y"]].values
-    except KeyError:
-        # Assume that the first two columns are the x and y coordinates
+    elif "X_UTME" in df.columns:
+        if "POLY_ID" in df.columns:
+            xyz = [
+                gf[["X_UTME", "Y_UTMN"]].values
+                for _, gf in df.groupby("POLY_ID")
+            ]
+        else:
+            xyz = df[["X_UTME", "Y_UTMN"]].values
+    else:
+        # Attempt to use the first two columns as the x and y coordinates
         xyz = df.values[:, :2]
-
+    if isinstance(xyz, list):
+        poly_type = "MultiPolygon"
+        coords = [[arr.tolist()] for arr in xyz]
+    else:
+        poly_type = "Polygon"
+        coords = [xyz.tolist()]
     as_geojson = {
         "type": "FeatureCollection",
         "features": [
@@ -293,8 +306,8 @@ def _parse_polygon_file(filename: str) -> Dict[str, Any]:
                 "type": "Feature",
                 "properties": {},
                 "geometry": {
-                    "type": "Polygon",
-                    "coordinates": [xyz.tolist()],
+                    "type": poly_type,
+                    "coordinates": coords,
                 },
             }
         ],
