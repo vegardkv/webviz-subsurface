@@ -36,6 +36,14 @@ def generate_summary_figure(
         y=df["total"],
         name="Total",
     )
+    # TODO: need to address this per realization
+    fig.layout.xaxis.title = "Time"
+    fig.layout.yaxis.title = f"Amount CO2 [{scale.value}]"
+    fig.layout.paper_bgcolor = "rgba(0,0,0,0)"
+    fig.layout.margin.b = 10
+    fig.layout.margin.t = 60
+    fig.layout.margin.l = 10
+    fig.layout.margin.r = 10
     return fig
 
 
