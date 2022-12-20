@@ -1,7 +1,6 @@
 import dataclasses
 import pandas as pd
 import plotly.graph_objects as go
-import plotly.express as px
 from dataclasses import dataclass
 from typing import List
 
@@ -17,27 +16,37 @@ def generate_summary_figure(
     columns = _column_subset(table_provider)
     df = _read_dataframe(table_provider, realizations, columns, scale)
     fig = go.Figure()
-    fig.add_scatter(
-        x=df[columns.time],
-        y=df[columns.dissolved],
-        name=f"Dissolved ({columns.dissolved})",
-    )
-    fig.add_scatter(
-        x=df[columns.time],
-        y=df[columns.trapped],
-        name=f"Trapped ({columns.trapped})",
-    )
-    fig.add_scatter(
-        x=df[columns.time],
-        y=df[columns.mobile],
-        name=f"Mobile ({columns.mobile})"
-    )
-    fig.add_scatter(
-        x=df[columns.time],
-        y=df["total"],
-        name="Total",
-    )
-    # TODO: need to address this per realization
+    showlegend = True
+    for real, gf in df.groupby("realization"):
+        fig.add_scatter(
+            x=gf[columns.time],
+            y=gf[columns.dissolved],
+            name=f"Dissolved ({columns.dissolved})",
+            legendgroup="Dissolved",
+            showlegend=showlegend,
+        )
+        fig.add_scatter(
+            x=gf[columns.time],
+            y=gf[columns.trapped],
+            name=f"Trapped ({columns.trapped})",
+            legendgroup="Trapped",
+            showlegend=showlegend,
+        )
+        fig.add_scatter(
+            x=gf[columns.time],
+            y=gf[columns.mobile],
+            name=f"Mobile ({columns.mobile})",
+            legendgroup="Mobile",
+            showlegend=showlegend,
+        )
+        fig.add_scatter(
+            x=gf[columns.time],
+            y=gf["total"],
+            name="Total",
+            legendgroup="Total",
+            showlegend=showlegend,
+        )
+        showlegend = False
     fig.layout.xaxis.title = "Time"
     fig.layout.yaxis.title = f"Amount CO2 [{scale.value}]"
     fig.layout.paper_bgcolor = "rgba(0,0,0,0)"
