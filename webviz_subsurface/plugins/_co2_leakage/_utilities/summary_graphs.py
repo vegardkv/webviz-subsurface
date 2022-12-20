@@ -1,6 +1,7 @@
 import dataclasses
 import pandas as pd
 import plotly.graph_objects as go
+import plotly.colors
 from dataclasses import dataclass
 from typing import List
 
@@ -18,12 +19,14 @@ def generate_summary_figure(
     fig = go.Figure()
     showlegend = True
     for real, gf in df.groupby("realization"):
+        cm = plotly.colors.qualitative.Plotly
         fig.add_scatter(
             x=gf[columns.time],
             y=gf[columns.dissolved],
             name=f"Dissolved ({columns.dissolved})",
             legendgroup="Dissolved",
             showlegend=showlegend,
+            color=cm[0],
         )
         fig.add_scatter(
             x=gf[columns.time],
@@ -31,6 +34,7 @@ def generate_summary_figure(
             name=f"Trapped ({columns.trapped})",
             legendgroup="Trapped",
             showlegend=showlegend,
+            color=cm[1],
         )
         fig.add_scatter(
             x=gf[columns.time],
@@ -38,6 +42,7 @@ def generate_summary_figure(
             name=f"Mobile ({columns.mobile})",
             legendgroup="Mobile",
             showlegend=showlegend,
+            color=cm[2],
         )
         fig.add_scatter(
             x=gf[columns.time],
@@ -45,6 +50,7 @@ def generate_summary_figure(
             name="Total",
             legendgroup="Total",
             showlegend=showlegend,
+            color=cm[3],
         )
         showlegend = False
     fig.layout.xaxis.title = "Time"
