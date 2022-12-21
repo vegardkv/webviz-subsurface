@@ -1,9 +1,9 @@
 import dataclasses
+from typing import List
+
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.colors
-from dataclasses import dataclass
-from typing import List
 
 from webviz_subsurface._providers import EnsembleTableProvider
 from webviz_subsurface.plugins._co2_leakage._utilities.generic import Co2Scale
@@ -18,39 +18,39 @@ def generate_summary_figure(
     df = _read_dataframe(table_provider, realizations, columns, scale)
     fig = go.Figure()
     showlegend = True
-    for real, gf in df.groupby("realization"):
-        cm = plotly.colors.qualitative.Plotly
+    for _, sub_df in df.groupby("realization"):
+        colors = plotly.colors.qualitative.Plotly
         fig.add_scatter(
-            x=gf[columns.time],
-            y=gf[columns.dissolved],
+            x=sub_df[columns.time],
+            y=sub_df[columns.dissolved],
             name=f"Dissolved ({columns.dissolved})",
             legendgroup="Dissolved",
             showlegend=showlegend,
-            marker_color=cm[0],
+            marker_color=colors[0],
         )
         fig.add_scatter(
-            x=gf[columns.time],
-            y=gf[columns.trapped],
+            x=sub_df[columns.time],
+            y=sub_df[columns.trapped],
             name=f"Trapped ({columns.trapped})",
             legendgroup="Trapped",
             showlegend=showlegend,
-            marker_color=cm[1],
+            marker_color=colors[1],
         )
         fig.add_scatter(
-            x=gf[columns.time],
-            y=gf[columns.mobile],
+            x=sub_df[columns.time],
+            y=sub_df[columns.mobile],
             name=f"Mobile ({columns.mobile})",
             legendgroup="Mobile",
             showlegend=showlegend,
-            marker_color=cm[2],
+            marker_color=colors[2],
         )
         fig.add_scatter(
-            x=gf[columns.time],
-            y=gf["total"],
+            x=sub_df[columns.time],
+            y=sub_df["total"],
             name="Total",
             legendgroup="Total",
             showlegend=showlegend,
-            marker_color=cm[3],
+            marker_color=colors[3],
         )
         showlegend = False
     fig.layout.xaxis.title = "Time"
@@ -63,7 +63,7 @@ def generate_summary_figure(
     return fig
 
 
-@dataclass
+@dataclasses.dataclass
 class _ColumnNames:
     time: str
     dissolved: str
@@ -91,11 +91,11 @@ def _read_dataframe(
     full["total"] = (
         full[columns.dissolved] + full[columns.trapped] + full[columns.mobile]
     )
-    for c in [columns.dissolved, columns.trapped, columns.mobile, "total"]:
+    for col in [columns.dissolved, columns.trapped, columns.mobile, "total"]:
         if co2_scale == Co2Scale.MTONS:
-            full[c] = full[c] / 1e9
+            full[col] = full[col] / 1e9
         elif co2_scale == Co2Scale.NORMALIZE:
-            full[c] = full[c] / full["total"].max()
+            full[col] = full[col] / full["total"].max()
     return full
 
 
@@ -103,11 +103,11 @@ def _column_subset(table_provider: EnsembleTableProvider) -> _ColumnNames:
     existing = set(table_provider.column_names())
     assert "DATE" in existing
     # Try PFLOTRAN names
-    cn = _ColumnNames("DATE", "FGMDS", "FGMTR", "FGMGP")
-    if set(cn.values()).issubset(existing):
-        return cn
+    col_names = _ColumnNames("DATE", "FGMDS", "FGMTR", "FGMGP")
+    if set(col_names.values()).issubset(existing):
+        return col_names
     # Try Eclipse names
-    cn = _ColumnNames("DATE", "FWCD", "FGCDI", "FGCDM")
-    if set(cn.values()).issubset(existing):
-        return cn
+    col_names = _ColumnNames("DATE", "FWCD", "FGCDI", "FGCDM")
+    if set(col_names.values()).issubset(existing):
+        return col_names
     raise KeyError(f"Could not find suitable data columns among: {', '.join(existing)}")

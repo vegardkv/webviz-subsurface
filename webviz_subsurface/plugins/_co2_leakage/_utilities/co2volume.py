@@ -30,9 +30,9 @@ def _read_dataframe(
         value = 1e9
     else:
         value = df["total"].max()
-    for c in df.columns:
-        if c.startswith("total"):
-            df[c] /= value
+    for col in df.columns:
+        if col.startswith("total"):
+            df[col] /= value
     return df
 
 

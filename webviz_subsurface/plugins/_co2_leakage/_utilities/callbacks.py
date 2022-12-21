@@ -266,9 +266,9 @@ def generate_containment_figures(
         fig0 = generate_co2_volume_figure(*fig_args)
         fig1 = generate_co2_time_containment_figure(*fig_args)
         fig2 = generate_co2_mobile_phase_figure(*fig_args)
-    except KeyError as e:
-        warnings.warn(f"Could not generate CO2 figures: {e}")
-        raise e
+    except KeyError as exc:
+        warnings.warn(f"Could not generate CO2 figures: {exc}")
+        raise exc
     return fig0, fig1, fig2
 
 

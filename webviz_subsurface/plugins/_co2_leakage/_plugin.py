@@ -1,9 +1,6 @@
-import warnings
-
-import dash
 from typing import Any, Dict, List, Optional, Tuple
 
-from dash import Dash, Input, Output, State, callback, html
+from dash import Dash, Input, Output, State, callback, html, no_update
 from dash.exceptions import PreventUpdate
 from webviz_config import WebvizPluginABC, WebvizSettings
 from webviz_config.utils import StrEnum, callback_typecheck
@@ -189,7 +186,7 @@ class CO2Leakage(WebvizPluginABC):
         @callback_typecheck
         def update_graphs(ensemble: str, source: GraphSource, co2_scale: Co2Scale):
             styles = [{"display": "none"}] * 3
-            figs = [dash.no_update] * 3
+            figs = [no_update] * 3
             if (
                 source == GraphSource.CONTAINMENT
                 and ensemble in self._co2_table_providers

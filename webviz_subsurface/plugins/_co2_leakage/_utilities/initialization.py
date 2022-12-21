@@ -70,8 +70,8 @@ def init_table_provider(
             providers[ens] = factory.create_from_per_realization_csv_file(
                 ens_path, table_rel_path
             )
-        except (KeyError, ValueError) as e:
+        except (KeyError, ValueError) as exc:
             LOGGER.warning(
-                f'Did not load "{table_rel_path}" for ensemble "{ens}" with error {e}'
+                f'Did not load "{table_rel_path}" for ensemble "{ens}" with error {exc}'
             )
     return providers
