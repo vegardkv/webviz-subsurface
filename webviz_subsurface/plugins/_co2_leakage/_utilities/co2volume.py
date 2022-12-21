@@ -1,6 +1,6 @@
 import itertools
 from enum import Enum
-from typing import List
+from typing import Any, Dict, List
 
 import numpy as np
 import pandas
@@ -39,7 +39,13 @@ def _read_dataframe(
 def _read_terminal_co2_volumes(
     table_provider: EnsembleTableProvider, realizations: List[int], scale: Co2Scale
 ) -> pandas.DataFrame:
-    records = {"real": [], "amount": [], "containment": [], "phase": [], "sort_key": []}
+    records: Dict[str, List[Any]] = {
+        "real": [],
+        "amount": [],
+        "containment": [],
+        "phase": [],
+        "sort_key": [],
+    }
     for real in realizations:
         df = _read_dataframe(table_provider, real, scale)
         last = df.iloc[np.argmax(df["date"])]
@@ -70,7 +76,7 @@ def _read_co2_volumes(
     )
 
 
-def _adjust_figure(fig: go.Figure):
+def _adjust_figure(fig: go.Figure) -> None:
     fig.layout.title.x = 0.5
     fig.layout.paper_bgcolor = "rgba(0,0,0,0)"
     fig.layout.margin.b = 10

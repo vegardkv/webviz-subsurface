@@ -1,5 +1,5 @@
 import dataclasses
-from typing import List
+from typing import Iterable, List
 
 import pandas as pd
 import plotly.colors
@@ -70,7 +70,7 @@ class _ColumnNames:
     trapped: str
     mobile: str
 
-    def values(self):
+    def values(self) -> Iterable[str]:
         return dataclasses.asdict(self).values()
 
 

@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional, Tuple
 
+import plotly.graph_objects as go
 from dash import Dash, Input, Output, State, callback, html, no_update
 from dash.exceptions import PreventUpdate
 from webviz_config import WebvizPluginABC, WebvizSettings
@@ -184,14 +185,16 @@ class CO2Leakage(WebvizPluginABC):
             Input(self._settings_component(ViewSettings.Ids.CO2_SCALE), "value"),
         )
         @callback_typecheck
-        def update_graphs(ensemble: str, source: GraphSource, co2_scale: Co2Scale):
+        def update_graphs(
+            ensemble: str, source: GraphSource, co2_scale: Co2Scale
+        ) -> Tuple[go.Figure, go.Figure, go.Figure, Dict, Dict, Dict]:
             styles = [{"display": "none"}] * 3
             figs = [no_update] * 3
             if (
                 source == GraphSource.CONTAINMENT
                 and ensemble in self._co2_table_providers
             ):
-                figs = generate_containment_figures(
+                figs[: len(figs)] = generate_containment_figures(
                     self._co2_table_providers[ensemble],
                     co2_scale,
                 )
@@ -203,7 +206,7 @@ class CO2Leakage(WebvizPluginABC):
                 )
                 figs[: len(u_figs)] = u_figs
                 styles[: len(u_figs)] = [{}] * len(u_figs)
-            return *figs, *styles
+            return *figs, *styles  # type: ignore
 
         @callback(
             Output(self._view_component(MapViewElement.Ids.DATE_SLIDER), "marks"),
