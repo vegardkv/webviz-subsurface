@@ -80,13 +80,17 @@ def _read_dataframe(
     columns: _ColumnNames,
     co2_scale: Co2Scale,
 ) -> pd.DataFrame:
-    full = pd.concat([
-        table_provider.get_column_data(
-            list(columns.values()), [real]
-        ).assign(realization=real)
-        for real in realizations
-    ])
-    full["total"] = full[columns.dissolved] + full[columns.trapped] + full[columns.mobile]
+    full = pd.concat(
+        [
+            table_provider.get_column_data(list(columns.values()), [real]).assign(
+                realization=real
+            )
+            for real in realizations
+        ]
+    )
+    full["total"] = (
+        full[columns.dissolved] + full[columns.trapped] + full[columns.mobile]
+    )
     for c in [columns.dissolved, columns.trapped, columns.mobile, "total"]:
         if co2_scale == Co2Scale.MTONS:
             full[c] = full[c] / 1e9

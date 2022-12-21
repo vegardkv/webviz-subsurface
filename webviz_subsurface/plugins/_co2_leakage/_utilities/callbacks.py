@@ -21,13 +21,18 @@ from webviz_subsurface._providers.ensemble_surface_provider.ensemble_surface_pro
 )
 from webviz_subsurface._utils.webvizstore_functions import read_csv
 from webviz_subsurface.plugins._co2_leakage._utilities import plume_extent
-from webviz_subsurface.plugins._co2_leakage._utilities.co2volume import \
-    generate_co2_volume_figure, generate_co2_time_containment_figure, \
-    generate_co2_mobile_phase_figure
-from webviz_subsurface.plugins._co2_leakage._utilities.generic import MapAttribute, \
-    Co2Scale
-from webviz_subsurface.plugins._co2_leakage._utilities.summary_graphs import \
-    generate_summary_figure
+from webviz_subsurface.plugins._co2_leakage._utilities.co2volume import (
+    generate_co2_volume_figure,
+    generate_co2_time_containment_figure,
+    generate_co2_mobile_phase_figure,
+)
+from webviz_subsurface.plugins._co2_leakage._utilities.generic import (
+    MapAttribute,
+    Co2Scale,
+)
+from webviz_subsurface.plugins._co2_leakage._utilities.summary_graphs import (
+    generate_summary_figure,
+)
 from webviz_subsurface.plugins._co2_leakage._utilities.surface_publishing import (
     TruncatedSurfaceAddress,
     publish_and_get_surface_metadata,
@@ -271,11 +276,13 @@ def generate_unsmry_figures(
     table_provider: EnsembleTableProvider,
     co2_scale: Co2Scale,
 ) -> Tuple[go.Figure]:
-    return (generate_summary_figure(
-        table_provider,
-        table_provider.realizations(),
-        co2_scale,
-    ),)
+    return (
+        generate_summary_figure(
+            table_provider,
+            table_provider.realizations(),
+            co2_scale,
+        ),
+    )
 
 
 def _parse_polygon_file(filename: str) -> Dict[str, Any]:
@@ -284,10 +291,7 @@ def _parse_polygon_file(filename: str) -> Dict[str, Any]:
         xyz = df[["x", "y"]].values
     elif "X_UTME" in df.columns:
         if "POLY_ID" in df.columns:
-            xyz = [
-                gf[["X_UTME", "Y_UTMN"]].values
-                for _, gf in df.groupby("POLY_ID")
-            ]
+            xyz = [gf[["X_UTME", "Y_UTMN"]].values for _, gf in df.groupby("POLY_ID")]
         else:
             xyz = df[["X_UTME", "Y_UTMN"]].values
     else:

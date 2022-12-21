@@ -22,8 +22,11 @@ from webviz_subsurface.plugins._co2_leakage._utilities.callbacks import (
 from webviz_subsurface.plugins._co2_leakage._utilities.fault_polygons import (
     FaultPolygonsHandler,
 )
-from webviz_subsurface.plugins._co2_leakage._utilities.generic import MapAttribute, \
-    Co2Scale, GraphSource
+from webviz_subsurface.plugins._co2_leakage._utilities.generic import (
+    MapAttribute,
+    Co2Scale,
+    GraphSource,
+)
 from webviz_subsurface.plugins._co2_leakage._utilities.initialization import (
     init_table_provider,
     init_map_attribute_names,
@@ -175,10 +178,10 @@ class CO2Leakage(WebvizPluginABC):
         @callback(
             Output(self._view_component(MapViewElement.Ids.BAR_PLOT), "figure"),
             Output(self._view_component(MapViewElement.Ids.TIME_PLOT), "figure"),
-            Output(self._view_component(MapViewElement.Ids.MOBILE_PHASE_PLOT), "figure"),
+            Output(self._view_component(MapViewElement.Ids.MOBILE_CO2_PLOT), "figure"),
             Output(self._view_component(MapViewElement.Ids.BAR_PLOT), "style"),
             Output(self._view_component(MapViewElement.Ids.TIME_PLOT), "style"),
-            Output(self._view_component(MapViewElement.Ids.MOBILE_PHASE_PLOT), "style"),
+            Output(self._view_component(MapViewElement.Ids.MOBILE_CO2_PLOT), "style"),
             Input(self._settings_component(ViewSettings.Ids.ENSEMBLE), "value"),
             Input(self._settings_component(ViewSettings.Ids.GRAPH_SOURCE), "value"),
             Input(self._settings_component(ViewSettings.Ids.CO2_SCALE), "value"),
@@ -187,7 +190,10 @@ class CO2Leakage(WebvizPluginABC):
         def update_graphs(ensemble: str, source: GraphSource, co2_scale: Co2Scale):
             styles = [{"display": "none"}] * 3
             figs = [dash.no_update] * 3
-            if source == GraphSource.CONTAINMENT and ensemble in self._co2_table_providers:
+            if (
+                source == GraphSource.CONTAINMENT
+                and ensemble in self._co2_table_providers
+            ):
                 figs = generate_containment_figures(
                     self._co2_table_providers[ensemble],
                     co2_scale,
@@ -198,8 +204,8 @@ class CO2Leakage(WebvizPluginABC):
                     self._unsmry_providers[ensemble],
                     co2_scale,
                 )
-                figs[:len(u_figs)] = u_figs
-                styles[:len(u_figs)] = [{}] * len(u_figs)
+                figs[: len(u_figs)] = u_figs
+                styles[: len(u_figs)] = [{}] * len(u_figs)
             return *figs, *styles
 
         @callback(

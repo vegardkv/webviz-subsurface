@@ -72,6 +72,6 @@ def init_table_provider(
             )
         except (KeyError, ValueError) as e:
             LOGGER.warning(
-                f"Did not load \"{table_rel_path}\" for ensemble \"{ens}\" with error {e}"
+                f'Did not load "{table_rel_path}" for ensemble "{ens}" with error {e}'
             )
     return providers

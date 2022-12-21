@@ -26,7 +26,7 @@ class MapViewElement(ViewElementABC):
         DATE_WRAPPER = "date-wrapper"
         BAR_PLOT = "bar-plot"
         TIME_PLOT = "time-plot"
-        MOBILE_PHASE_PLOT = "mobile-phase-plot"
+        MOBILE_CO2_PLOT = "mobile-phase-plot"
 
     def __init__(self, color_scales: List[Dict[str, Any]]) -> None:
         super().__init__()
@@ -87,7 +87,7 @@ class MapViewElement(ViewElementABC):
                     children=_summary_graph_layout(
                         self.register_component_unique_id(self.Ids.BAR_PLOT),
                         self.register_component_unique_id(self.Ids.TIME_PLOT),
-                        self.register_component_unique_id(self.Ids.MOBILE_PHASE_PLOT),
+                        self.register_component_unique_id(self.Ids.MOBILE_CO2_PLOT),
                     ),
                 ),
             ],

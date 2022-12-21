@@ -270,7 +270,7 @@ class GraphSelectorsLayout(wcc.Selectors):
                     value=Co2Scale.MTONS,
                     clearable=False,
                 ),
-            ]
+            ],
         )
 
 
