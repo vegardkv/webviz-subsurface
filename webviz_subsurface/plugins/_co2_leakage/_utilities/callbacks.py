@@ -1,5 +1,4 @@
 import warnings
-
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -9,12 +8,12 @@ import plotly.graph_objects as go
 
 from webviz_subsurface._providers import (
     EnsembleSurfaceProvider,
+    EnsembleTableProvider,
     SimulatedSurfaceAddress,
     StatisticalSurfaceAddress,
     SurfaceAddress,
     SurfaceImageMeta,
     SurfaceImageServer,
-    EnsembleTableProvider,
 )
 from webviz_subsurface._providers.ensemble_surface_provider.ensemble_surface_provider import (
     SurfaceStatistic,
@@ -22,13 +21,13 @@ from webviz_subsurface._providers.ensemble_surface_provider.ensemble_surface_pro
 from webviz_subsurface._utils.webvizstore_functions import read_csv
 from webviz_subsurface.plugins._co2_leakage._utilities import plume_extent
 from webviz_subsurface.plugins._co2_leakage._utilities.co2volume import (
-    generate_co2_volume_figure,
-    generate_co2_time_containment_figure,
     generate_co2_mobile_phase_figure,
+    generate_co2_time_containment_figure,
+    generate_co2_volume_figure,
 )
 from webviz_subsurface.plugins._co2_leakage._utilities.generic import (
-    MapAttribute,
     Co2Scale,
+    MapAttribute,
 )
 from webviz_subsurface.plugins._co2_leakage._utilities.summary_graphs import (
     generate_summary_figure,

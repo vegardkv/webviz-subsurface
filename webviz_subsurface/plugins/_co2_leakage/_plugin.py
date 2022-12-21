@@ -10,24 +10,24 @@ from webviz_subsurface.plugins._co2_leakage._utilities.callbacks import (
     SurfaceData,
     create_map_layers,
     derive_surface_address,
+    generate_containment_figures,
+    generate_unsmry_figures,
     get_plume_polygon,
     property_origin,
     readable_name,
-    generate_containment_figures,
-    generate_unsmry_figures,
 )
 from webviz_subsurface.plugins._co2_leakage._utilities.fault_polygons import (
     FaultPolygonsHandler,
 )
 from webviz_subsurface.plugins._co2_leakage._utilities.generic import (
-    MapAttribute,
     Co2Scale,
     GraphSource,
+    MapAttribute,
 )
 from webviz_subsurface.plugins._co2_leakage._utilities.initialization import (
-    init_table_provider,
     init_map_attribute_names,
     init_surface_providers,
+    init_table_provider,
     init_well_pick_provider,
 )
 from webviz_subsurface.plugins._co2_leakage.views.mainview.mainview import (

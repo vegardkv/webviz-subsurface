@@ -1,4 +1,5 @@
 from enum import Enum
+
 from webviz_config.utils import StrEnum
 
 

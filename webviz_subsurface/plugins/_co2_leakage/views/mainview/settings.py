@@ -13,9 +13,9 @@ from webviz_subsurface._providers.ensemble_surface_provider.ensemble_surface_pro
 )
 from webviz_subsurface.plugins._co2_leakage._utilities.callbacks import property_origin
 from webviz_subsurface.plugins._co2_leakage._utilities.generic import (
-    MapAttribute,
     Co2Scale,
     GraphSource,
+    MapAttribute,
 )
 
 

@@ -2,8 +2,8 @@ import dataclasses
 from typing import List
 
 import pandas as pd
-import plotly.graph_objects as go
 import plotly.colors
+import plotly.graph_objects as go
 
 from webviz_subsurface._providers import EnsembleTableProvider
 from webviz_subsurface.plugins._co2_leakage._utilities.generic import Co2Scale
