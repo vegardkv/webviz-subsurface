@@ -235,7 +235,7 @@ def _find_scale_factor(
         return 1e9
     if scale in (Co2MassScale.NORMALIZE, Co2VolumeScale.NORMALIZE):
         df = table_provider.get_column_data(table_provider.column_names())
-        return df["total"].max()
+        return df["amount"].max()
     return 1.0
 
 
