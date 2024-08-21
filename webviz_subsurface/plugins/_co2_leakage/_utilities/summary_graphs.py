@@ -16,21 +16,16 @@ from webviz_subsurface.plugins._co2_leakage._utilities.generic import (
 # pylint: disable=too-many-locals
 def generate_summary_figure(
     table_provider_unsmry: EnsembleTableProvider,
-    realizations_unsmry: List[int],
     scale: Union[Co2MassScale, Co2VolumeScale],
     table_provider_containment: EnsembleTableProvider,
-    realizations_containment: List[int],
 ) -> go.Figure:
     columns_unsmry = _column_subset_unsmry(table_provider_unsmry)
-    columns_containment = _column_subset_containment(table_provider_containment)
     df_unsmry = _read_dataframe(
-        table_provider_unsmry, realizations_unsmry, columns_unsmry, scale
+        table_provider_unsmry,  columns_unsmry, scale
     )
     df_containment = _read_dataframe_containment(
-        table_provider_containment, realizations_containment, columns_containment, scale
+        table_provider_containment, scale
     )
-    fig = go.Figure()
-    showlegend = True
 
     r_min = min(df_unsmry.REAL)
     unsmry_last_total = df_unsmry[df_unsmry.REAL == r_min]["total"].iloc[-1]
@@ -40,15 +35,10 @@ def generate_summary_figure(
     unsmry_last_dissolved = df_unsmry[df_unsmry.REAL == r_min][
         columns_unsmry.dissolved
     ].iloc[-1]
-    containment_last_total = df_containment[df_containment.REAL == r_min]["total"].iloc[
-        -1
-    ]
-    containment_last_mobile = df_containment[df_containment.REAL == r_min][
-        columns_containment.mobile
-    ].iloc[-1]
-    containment_last_dissolved = df_containment[df_containment.REAL == r_min][
-        columns_containment.dissolved
-    ].iloc[-1]
+    containment_reference = df_containment[df_containment.REAL == r_min]
+    containment_last_total = containment_reference[containment_reference["phase"] == "total"]["amount"].iloc[-1]
+    containment_last_mobile = containment_reference[containment_reference["phase"] == "free_gas"]["amount"].iloc[-1]
+    containment_last_dissolved = containment_reference[containment_reference["phase"] == "aqueous"]["amount"].iloc[-1]
     last_total_err_percentage = (
         100.0 * abs(containment_last_total - unsmry_last_total) / unsmry_last_total
     )
@@ -64,76 +54,72 @@ def generate_summary_figure(
     last_mobile_err_percentage = np.round(last_mobile_err_percentage, 2)
     last_dissolved_err_percentage = np.round(last_dissolved_err_percentage, 2)
 
+    _colors = {
+        'total': plotly.colors.qualitative.Plotly[3],
+        'mobile': plotly.colors.qualitative.Plotly[2],
+        'dissolved': plotly.colors.qualitative.Plotly[0],
+        'trapped': plotly.colors.qualitative.Plotly[1],
+    }
+
+    fig = go.Figure()
+    showlegend = True
     for _, sub_df in df_unsmry.groupby("realization"):
-        colors = plotly.colors.qualitative.Plotly
         fig.add_scatter(
             x=sub_df[columns_unsmry.time],
             y=sub_df["total"],
             name="UNSMRY",
-            legendgroup="group_1",
+            legendgroup="total",
             legendgrouptitle_text=f"Total ({last_total_err_percentage} %)",
             showlegend=showlegend,
-            marker_color=colors[3],
+            marker_color=_colors["total"],
         )
         fig.add_scatter(
             x=sub_df[columns_unsmry.time],
             y=sub_df[columns_unsmry.mobile],
             name=f"UNSMRY ({columns_unsmry.mobile})",
-            legendgroup="group_2",
+            legendgroup="mobile",
             legendgrouptitle_text=f"Mobile ({last_mobile_err_percentage} %)",
             showlegend=showlegend,
-            marker_color=colors[2],
+            marker_color=_colors["mobile"],
         )
         fig.add_scatter(
             x=sub_df[columns_unsmry.time],
             y=sub_df[columns_unsmry.dissolved],
             name=f"UNSMRY ({columns_unsmry.dissolved})",
-            legendgroup="group_3",
+            legendgroup="dissolved",
             legendgrouptitle_text=f"Dissolved ({last_dissolved_err_percentage} %)",
             showlegend=showlegend,
-            marker_color=colors[0],
+            marker_color=_colors["dissolved"],
         )
         fig.add_scatter(
             x=sub_df[columns_unsmry.time],
             y=sub_df[columns_unsmry.trapped],
             name=f"UNSMRY ({columns_unsmry.trapped})",
-            legendgroup="group_4",
+            legendgroup="trapped",
             legendgrouptitle_text="Trapped",
             showlegend=showlegend,
-            marker_color=colors[1],
+            marker_color=_colors["trapped"],
         )
         showlegend = False
-    showlegend = True
-    for _, sub_df in df_containment.groupby("realization"):
-        colors = plotly.colors.qualitative.Plotly
+
+    _col_names = {
+        "total": "total",
+        "free_gas": "mobile",
+        "aqueous": "dissolved",
+        "trapped_gas": "trapped",
+    }
+
+    for (real, phase), sub_df in df_containment.groupby(["REAL", "phase"]):
         fig.add_scatter(
-            x=sub_df[columns_containment.time],
-            y=sub_df["total"],
-            name="Containment script",
-            legendgroup="group_1",
-            showlegend=showlegend,
-            marker_color=colors[3],
+            x=sub_df["date"],
+            y=sub_df["amount"],
+            name=f"Containment script ({phase})",
+            legendgroup=_col_names[phase],
+            showlegend=bool(real == 0),
+            marker_color=_colors[_col_names[phase]],
             line_dash="dash",
         )
-        fig.add_scatter(
-            x=sub_df[columns_containment.time],
-            y=sub_df[columns_containment.mobile],
-            name=f"Containment script ({columns_containment.mobile})",
-            legendgroup="group_2",
-            showlegend=showlegend,
-            marker_color=colors[2],
-            line_dash="dash",
-        )
-        fig.add_scatter(
-            x=sub_df[columns_containment.time],
-            y=sub_df[columns_containment.dissolved],
-            name=f"Containment script ({columns_containment.dissolved})",
-            legendgroup="group_3",
-            showlegend=showlegend,
-            marker_color=colors[0],
-            line_dash="dash",
-        )
-        showlegend = False
+
     fig.layout.xaxis.title = "Time"
     fig.layout.yaxis.title = f"Amount CO2 [{scale.value}]"
     fig.layout.paper_bgcolor = "rgba(0,0,0,0)"
@@ -167,7 +153,6 @@ class _ColumnNamesContainment:
 
 def _read_dataframe(
     table_provider: EnsembleTableProvider,
-    realizations: List[int],
     columns: _ColumnNames,
     co2_scale: Union[Co2MassScale, Co2VolumeScale],
 ) -> pd.DataFrame:
@@ -176,7 +161,7 @@ def _read_dataframe(
             table_provider.get_column_data(list(columns.values()), [real]).assign(
                 realization=real
             )
-            for real in realizations
+            for real in table_provider.realizations()
         ]
     )
     full["total"] = (
@@ -192,25 +177,16 @@ def _read_dataframe(
 
 def _read_dataframe_containment(
     table_provider: EnsembleTableProvider,
-    realizations: List[int],
-    columns: _ColumnNamesContainment,
     co2_scale: Union[Co2MassScale, Co2VolumeScale],
 ) -> pd.DataFrame:
-    full = pd.concat(
-        [
-            table_provider.get_column_data(list(columns.values()), [real]).assign(
-                realization=real
-            )
-            for real in realizations
-        ]
-    )
-    full["total"] = full[columns.dissolved] + full[columns.mobile]
-    for col in [columns.dissolved, columns.mobile, "total"]:
-        if co2_scale == Co2MassScale.MTONS:
-            full[col] = full[col] / 1e9
-        elif co2_scale == Co2MassScale.NORMALIZE:
-            full[col] = full[col] / full["total"].max()
-    return full
+
+    df = table_provider.get_column_data(table_provider.column_names(), table_provider.realizations())
+    df = df[(df["zone"] == "all") & (df["region"] == "all")]
+    if co2_scale == Co2MassScale.MTONS:
+        df["amount"] = df["amount"] / 1e9
+    elif co2_scale == Co2MassScale.NORMALIZE:
+        df["amount"] = df["amount"] / df["total"].max()
+    return df
 
 
 def _column_subset_unsmry(table_provider: EnsembleTableProvider) -> _ColumnNames:
@@ -222,17 +198,6 @@ def _column_subset_unsmry(table_provider: EnsembleTableProvider) -> _ColumnNames
         return col_names
     # Try Eclipse names
     col_names = _ColumnNames("DATE", "FWCD", "FGCDI", "FGCDM")
-    if set(col_names.values()).issubset(existing):
-        return col_names
-    raise KeyError(f"Could not find suitable data columns among: {', '.join(existing)}")
-
-
-def _column_subset_containment(
-    table_provider: EnsembleTableProvider,
-) -> _ColumnNamesContainment:
-    existing = set(table_provider.column_names())
-    assert "date" in existing
-    col_names = _ColumnNamesContainment("date", "total_aqueous", "total_gas")
     if set(col_names.values()).issubset(existing):
         return col_names
     raise KeyError(f"Could not find suitable data columns among: {', '.join(existing)}")

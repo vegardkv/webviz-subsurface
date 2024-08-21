@@ -435,15 +435,11 @@ def generate_unsmry_figures(
     table_provider_unsmry: EnsembleTableProvider,
     co2_mass_scale: Union[Co2MassScale, Co2VolumeScale],
     table_provider_containment: EnsembleTableProvider,
-) -> Tuple[go.Figure]:
-    return (
-        generate_summary_figure(
-            table_provider_unsmry,
-            table_provider_unsmry.realizations(),
-            co2_mass_scale,
-            table_provider_containment,
-            table_provider_containment.realizations(),
-        ),
+) -> go.Figure:
+    return generate_summary_figure(
+        table_provider_unsmry,
+        co2_mass_scale,
+        table_provider_containment,
     )
 
 
