@@ -429,7 +429,12 @@ def generate_co2_volume_figure(
         pattern_shape_sequence=marks,
         orientation="h",
         category_orders=cat_ord,
-        hover_data={"prop": True, "real": False},
+        custom_data=["type", "prop"],
+    )
+    fig.update_traces(
+        hovertemplate="Type: %{customdata[0]}<br>Amount: %{x:.3f}<br>"
+        "Realization: %{y}<br>Proportion: %{customdata[1]}",
+        name="",
     )
     fig.layout.yaxis.title = "Realization"
     fig.layout.xaxis.title = scale.value
@@ -477,10 +482,12 @@ def generate_co2_time_containment_one_realization_figure(
         pattern_shape_sequence=marks,
         category_orders=cat_ord,
         range_y=y_limits,
-        hover_data={
-            "prop": True,
-            "amount": ":.3f",
-        },
+        custom_data=["type", "prop"],
+    )
+    fig.update_traces(
+        hovertemplate="Type: %{customdata[0]}<br>Date: %{x}<br>"
+        "Amount: %{y:.3f}<br>Proportion: %{customdata[1]}",
+        name="",
     )
     _add_hover_info_in_field(fig, df, cat_ord, colors)
     fig.layout.yaxis.range = y_limits
@@ -542,8 +549,8 @@ def _add_hover_info_in_field(
                     y=y_vals,
                     mode="lines",
                     line=go.scatter.Line(color=color),
-                    text=f"type={name}<br>date={date_strings[date]}<br>"
-                    f"amount={amount:.3f}<br>prop={prop}",
+                    text=f"Type: {name}<br>Date: {date_strings[date]}<br>"
+                    f"Amount: {amount:.3f}<br>Proportion: {prop}",
                     opacity=0,
                     hoverinfo="text",
                     hoveron="points",
@@ -592,20 +599,20 @@ def generate_co2_time_containment_figure(
         )
         common_args = {
             "x": sub_df["date"],
-            "hovertemplate": "%{x}: %{y}<br>Realization: %{meta[0]}<br>Prop: %{customdata}%",
-            "meta": [rlz],
             "showlegend": False,
         }
         for name, color, line_type in zip(
             options["name"], options["color"], options["line_type"]
         ):
-            # NBNB-AS: Check this, mypy complains:
             args = {
                 "line_dash": line_type,
                 "marker_color": color,
                 "legendgroup": name,
-                "name": name,
-                "customdata": sub_df[sub_df["name"] == name]["prop"],  # type: ignore
+                "name": "",
+                "meta": [rlz, name],
+                "customdata": sub_df[sub_df["name"] == name]["prop"],
+                "hovertemplate": "Type: %{meta[1]}<br>Date: %{x}<br>Amount: %{y:.3f}"
+                "<br>Realization: %{meta[0]}<br>Proportion: %{customdata}",
             }
             if name not in active_cols_at_startup:
                 args["visible"] = "legendonly"
