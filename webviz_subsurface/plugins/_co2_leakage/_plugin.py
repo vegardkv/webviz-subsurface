@@ -40,6 +40,7 @@ from webviz_subsurface.plugins._co2_leakage._utilities.initialization import (
     init_table_provider,
     init_well_pick_provider,
     process_files,
+    init_containment_data_providers,
 )
 from webviz_subsurface.plugins._co2_leakage.views.mainview.mainview import (
     MainView,
@@ -145,11 +146,11 @@ class CO2Leakage(WebvizPluginABC):
                 for ens in ensembles
             }
             # CO2 containment
-            self._co2_table_providers = init_table_provider(
+            self._co2_table_providers = init_containment_data_providers(
                 ensemble_paths,
                 plume_mass_relpath,
             )
-            self._co2_actual_volume_table_providers = init_table_provider(
+            self._co2_actual_volume_table_providers = init_containment_data_providers(
                 ensemble_paths,
                 plume_actual_volume_relpath,
             )
@@ -171,8 +172,6 @@ class CO2Leakage(WebvizPluginABC):
                 ensemble_paths,
                 self._co2_table_providers,
                 self._co2_actual_volume_table_providers,
-                plume_mass_relpath,
-                plume_actual_volume_relpath,
             )
         except Exception as err:
             self._error_message = f"Plugin initialization failed: {err}"

@@ -9,6 +9,7 @@ import plotly.graph_objects as go
 
 from webviz_subsurface._providers import EnsembleTableProvider
 from webviz_subsurface._utils.enum_shim import StrEnum
+from webviz_subsurface.plugins._co2_leakage._utilities.containment_data_provider import ContainmentDataProvider
 from webviz_subsurface.plugins._co2_leakage._utilities.generic import (
     Co2MassScale,
     Co2VolumeScale,
@@ -52,40 +53,6 @@ def _read_dataframe(
         return df
     df["amount"] /= scale_factor
     return df
-
-
-def read_menu_options(
-    table_provider: EnsembleTableProvider,
-    realization: int,
-    relpath: str,
-) -> Dict[str, List[str]]:
-    col_names = table_provider.column_names()
-    df = table_provider.get_column_data(col_names, [realization])
-    required_columns = ["date", "amount", "phase", "containment", "zone", "region"]
-    missing_columns = [col for col in required_columns if col not in col_names]
-    if len(missing_columns) > 0:
-        raise KeyError(
-            f"Missing expected columns {', '.join(missing_columns)} in {relpath}"
-            f" in realization {realization} (and possibly other csv-files). "
-            f"Provided files are likely from an old version of ccs-scripts."
-        )
-    zones = ["all"]
-    for zone in list(df["zone"]):
-        if zone not in zones:
-            zones.append(zone)
-    regions = ["all"]
-    for region in list(df["region"]):
-        if region not in regions:
-            regions.append(region)
-    if "free_gas" in list(df["phase"]):
-        phases = ["total", "free_gas", "trapped_gas", "aqueous"]
-    else:
-        phases = ["total", "gas", "aqueous"]
-    return {
-        "zones": zones if len(zones) > 1 else [],
-        "regions": regions if len(regions) > 1 else [],
-        "phases": phases,
-    }
 
 
 def _get_colors(num_cols: int = 3, split: str = "zone") -> List[str]:
@@ -240,7 +207,7 @@ def _find_scale_factor(
 
 
 def _read_terminal_co2_volumes(
-    table_provider: EnsembleTableProvider,
+    table_provider: ContainmentDataProvider,
     realizations: List[int],
     scale: Union[Co2MassScale, Co2VolumeScale],
     containment_info: Dict[str, Union[str, None, List[str]]],
@@ -258,10 +225,9 @@ def _read_terminal_co2_volumes(
     records[color_choice] = []
     if mark_choice != "none":
         records[mark_choice] = []
-    scale_factor = _find_scale_factor(table_provider, scale)
     data_frame = None
     for real in realizations:
-        df = _read_dataframe(table_provider, real, scale_factor)
+        df = table_provider.extract_dataframe(real, scale)
         df = df[df["date"] == np.max(df["date"])]
         _add_sort_key_and_real(df, str(real), containment_info)
         _filter_columns(df, color_choice, mark_choice, containment_info)
@@ -331,14 +297,13 @@ def _add_sort_key_and_real(
 
 
 def _read_co2_volumes(
-    table_provider: EnsembleTableProvider,
+    table_provider: ContainmentDataProvider,
     realizations: List[int],
     scale: Union[Co2MassScale, Co2VolumeScale],
 ) -> pd.DataFrame:
-    scale_factor = _find_scale_factor(table_provider, scale)
     return pd.concat(
         [
-            _read_dataframe(table_provider, r, scale_factor).assign(realization=r)
+            table_provider.extract_dataframe(r, scale).assign(realization=r)
             for r in realizations
         ]
     )
@@ -402,7 +367,7 @@ def _add_prop_to_df(
 
 
 def generate_co2_volume_figure(
-    table_provider: EnsembleTableProvider,
+    table_provider: ContainmentDataProvider,
     realizations: List[int],
     scale: Union[Co2MassScale, Co2VolumeScale],
     containment_info: Dict[str, Any],
@@ -444,7 +409,7 @@ def generate_co2_volume_figure(
 
 # pylint: disable=too-many-locals
 def generate_co2_time_containment_one_realization_figure(
-    table_provider: EnsembleTableProvider,
+    table_provider: ContainmentDataProvider,
     scale: Union[Co2MassScale, Co2VolumeScale],
     time_series_realization: int,
     y_limits: List[Optional[float]],
@@ -562,7 +527,7 @@ def _add_hover_info_in_field(
 
 # pylint: disable=too-many-locals
 def generate_co2_time_containment_figure(
-    table_provider: EnsembleTableProvider,
+    table_provider: ContainmentDataProvider,
     realizations: List[int],
     scale: Union[Co2MassScale, Co2VolumeScale],
     containment_info: Dict[str, Any],

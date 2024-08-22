@@ -7,6 +7,7 @@ import plotly.colors
 import plotly.graph_objects as go
 
 from webviz_subsurface._providers import EnsembleTableProvider
+from webviz_subsurface.plugins._co2_leakage._utilities.containment_data_provider import ContainmentDataProvider
 from webviz_subsurface.plugins._co2_leakage._utilities.generic import (
     Co2MassScale,
     Co2VolumeScale,
@@ -17,15 +18,13 @@ from webviz_subsurface.plugins._co2_leakage._utilities.generic import (
 def generate_summary_figure(
     table_provider_unsmry: EnsembleTableProvider,
     scale: Union[Co2MassScale, Co2VolumeScale],
-    table_provider_containment: EnsembleTableProvider,
+    table_provider_containment: ContainmentDataProvider,
 ) -> go.Figure:
     columns_unsmry = _column_subset_unsmry(table_provider_unsmry)
     df_unsmry = _read_dataframe(
         table_provider_unsmry,  columns_unsmry, scale
     )
-    df_containment = _read_dataframe_containment(
-        table_provider_containment, scale
-    )
+    df_containment = table_provider_containment.extract_condensed_dataframe(scale)
 
     r_min = min(df_unsmry.REAL)
     unsmry_last_total = df_unsmry[df_unsmry.REAL == r_min]["total"].iloc[-1]
@@ -35,10 +34,12 @@ def generate_summary_figure(
     unsmry_last_dissolved = df_unsmry[df_unsmry.REAL == r_min][
         columns_unsmry.dissolved
     ].iloc[-1]
+    # TODO: expose these directly from table_provider_containment?
     containment_reference = df_containment[df_containment.REAL == r_min]
     containment_last_total = containment_reference[containment_reference["phase"] == "total"]["amount"].iloc[-1]
     containment_last_mobile = containment_reference[containment_reference["phase"] == "free_gas"]["amount"].iloc[-1]
     containment_last_dissolved = containment_reference[containment_reference["phase"] == "aqueous"]["amount"].iloc[-1]
+    # ---
     last_total_err_percentage = (
         100.0 * abs(containment_last_total - unsmry_last_total) / unsmry_last_total
     )
@@ -173,20 +174,6 @@ def _read_dataframe(
         elif co2_scale == Co2MassScale.NORMALIZE:
             full[col] = full[col] / full["total"].max()
     return full
-
-
-def _read_dataframe_containment(
-    table_provider: EnsembleTableProvider,
-    co2_scale: Union[Co2MassScale, Co2VolumeScale],
-) -> pd.DataFrame:
-
-    df = table_provider.get_column_data(table_provider.column_names(), table_provider.realizations())
-    df = df[(df["zone"] == "all") & (df["region"] == "all")]
-    if co2_scale == Co2MassScale.MTONS:
-        df["amount"] = df["amount"] / 1e9
-    elif co2_scale == Co2MassScale.NORMALIZE:
-        df["amount"] = df["amount"] / df["total"].max()
-    return df
 
 
 def _column_subset_unsmry(table_provider: EnsembleTableProvider) -> _ColumnNames:

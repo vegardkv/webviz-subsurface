@@ -14,9 +14,7 @@ from webviz_subsurface._providers import (
     EnsembleTableProviderFactory,
 )
 from webviz_subsurface._utils.webvizstore_functions import read_csv
-from webviz_subsurface.plugins._co2_leakage._utilities.co2volume import (
-    read_menu_options,
-)
+from webviz_subsurface.plugins._co2_leakage._utilities.containment_data_provider import ContainmentDataProvider
 from webviz_subsurface.plugins._co2_leakage._utilities.generic import (
     GraphSource,
     MapAttribute,
@@ -83,9 +81,38 @@ def init_table_provider(
     ensemble_roots: Dict[str, str],
     table_rel_path: str,
 ) -> Dict[str, EnsembleTableProvider]:
-    providers = {}
     factory = EnsembleTableProviderFactory.instance()
-    for ens, ens_path in ensemble_roots.items():
+    providers = {
+        ens: _init_ensemble_table_provider(factory, ens, ens_path, table_rel_path)
+        for ens, ens_path in ensemble_roots.items()
+    }
+    providers = {k: v for k, v in providers if v is not None}
+    return providers
+
+
+def init_containment_data_providers(
+    ensemble_roots: Dict[str, str],
+    table_rel_path: str,
+) -> Dict[str, ContainmentDataProvider]:
+    factory = EnsembleTableProviderFactory.instance()
+    providers = {
+        ens: _init_ensemble_table_provider(factory, ens, ens_path, table_rel_path)
+        for ens, ens_path in ensemble_roots.items()
+    }
+    return {
+        k: ContainmentDataProvider(v)
+        for k, v in providers.items()
+        if v is not None
+    }
+
+
+def _init_ensemble_table_provider(
+    factory: EnsembleTableProviderFactory,
+    ens: str,
+    ens_path: str,
+    table_rel_path: str,
+) -> Optional[EnsembleTableProvider]:
+    if ens_path.endswith(".csv"):
         max_size_mb = _find_max_file_size_mb(ens_path, table_rel_path)
         if max_size_mb > WARNING_THRESHOLD_CSV_FILE_SIZE_MB:
             text = (
@@ -96,15 +123,21 @@ def init_table_provider(
             text += f"\n  Max size : {max_size_mb:.2f} MB"
             LOGGER.warning(text)
 
+    try:
+        return factory.create_from_per_realization_csv_file(
+            ens_path, table_rel_path
+        )
+    except (KeyError, ValueError) as exc:
         try:
-            providers[ens] = factory.create_from_per_realization_csv_file(
+            return factory.create_from_per_realization_arrow_file(
                 ens_path, table_rel_path
             )
-        except (KeyError, ValueError) as exc:
+        except (KeyError, ValueError) as exc2:
             LOGGER.warning(
-                f'Did not load "{table_rel_path}" for ensemble "{ens}" with error {exc}'
+                f'Tried reading "{table_rel_path}" for ensemble "{ens}" as csv with'
+                f' error {exc}, and as arrow with error {exc2}'
             )
-    return providers
+    return None
 
 
 def _find_max_file_size_mb(ens_path: str, table_rel_path: str) -> float:
@@ -121,25 +154,19 @@ def _find_max_file_size_mb(ens_path: str, table_rel_path: str) -> float:
 
 def init_menu_options(
     ensemble_roots: Dict[str, str],
-    mass_table: Dict[str, EnsembleTableProvider],
-    actual_volume_table: Dict[str, EnsembleTableProvider],
-    mass_relpath: str,
-    volume_relpath: str,
+    mass_table: Dict[str, ContainmentDataProvider],
+    actual_volume_table: Dict[str, ContainmentDataProvider],
 ) -> Dict[str, Dict[str, Dict[str, List[str]]]]:
     options: Dict[str, Dict[str, Dict[str, List[str]]]] = {}
     for ens in ensemble_roots.keys():
-        options[ens] = {}
-        for source, table, relpath in zip(
-            [GraphSource.CONTAINMENT_MASS, GraphSource.CONTAINMENT_ACTUAL_VOLUME],
-            [mass_table, actual_volume_table],
-            [mass_relpath, volume_relpath],
-        ):
-            real = table[ens].realizations()[0]
-            options[ens][source] = read_menu_options(table[ens], real, relpath)
-        options[ens][GraphSource.UNSMRY] = {
-            "zones": [],
-            "regions": [],
-            "phases": ["total", "gas", "aqueous"],
+        options[ens] = {
+            GraphSource.CONTAINMENT_MASS: mass_table[ens].get_menu_options(),
+            GraphSource.CONTAINMENT_ACTUAL_VOLUME: actual_volume_table[ens].get_menu_options(),
+            GraphSource.UNSMRY: {
+                "zones": [],
+                "regions": [],
+                "phases": ["total", "gas", "aqueous"],
+            },
         }
     return options
 

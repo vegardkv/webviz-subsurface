@@ -28,6 +28,7 @@ from webviz_subsurface.plugins._co2_leakage._utilities.co2volume import (
     generate_co2_time_containment_one_realization_figure,
     generate_co2_volume_figure,
 )
+from webviz_subsurface.plugins._co2_leakage._utilities.containment_data_provider import ContainmentDataProvider
 from webviz_subsurface.plugins._co2_leakage._utilities.generic import (
     Co2MassScale,
     Co2VolumeScale,
@@ -403,7 +404,7 @@ def create_map_layers(
 
 
 def generate_containment_figures(
-    table_provider: EnsembleTableProvider,
+    table_provider: ContainmentDataProvider,
     co2_scale: Union[Co2MassScale, Co2VolumeScale],
     realization: int,
     y_limits: List[Optional[float]],
@@ -434,7 +435,7 @@ def generate_containment_figures(
 def generate_unsmry_figures(
     table_provider_unsmry: EnsembleTableProvider,
     co2_mass_scale: Union[Co2MassScale, Co2VolumeScale],
-    table_provider_containment: EnsembleTableProvider,
+    table_provider_containment: ContainmentDataProvider,
 ) -> go.Figure:
     return generate_summary_figure(
         table_provider_unsmry,
