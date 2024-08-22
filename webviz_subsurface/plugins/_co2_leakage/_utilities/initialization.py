@@ -14,10 +14,15 @@ from webviz_subsurface._providers import (
     EnsembleTableProviderFactory,
 )
 from webviz_subsurface._utils.webvizstore_functions import read_csv
-from webviz_subsurface.plugins._co2_leakage._utilities.containment_data_provider import ContainmentDataProvider
+from webviz_subsurface.plugins._co2_leakage._utilities.containment_data_provider import (
+    ContainmentDataProvider
+)
 from webviz_subsurface.plugins._co2_leakage._utilities.generic import (
     GraphSource,
     MapAttribute,
+)
+from webviz_subsurface.plugins._co2_leakage._utilities.unsmry_data_provider import (
+    UnsmryDataProvider
 )
 from webviz_subsurface.plugins._map_viewer_fmu._tmp_well_pick_provider import (
     WellPickProvider,
@@ -77,17 +82,20 @@ def init_well_pick_provider(
     return well_pick_provider
 
 
-def init_table_provider(
+def init_unsmry_data_providers(
     ensemble_roots: Dict[str, str],
     table_rel_path: str,
-) -> Dict[str, EnsembleTableProvider]:
+) -> Dict[str, UnsmryDataProvider]:
     factory = EnsembleTableProviderFactory.instance()
     providers = {
         ens: _init_ensemble_table_provider(factory, ens, ens_path, table_rel_path)
         for ens, ens_path in ensemble_roots.items()
     }
-    providers = {k: v for k, v in providers if v is not None}
-    return providers
+    return {
+        k: UnsmryDataProvider(v)
+        for k, v in providers.items()
+        if v is not None
+    }
 
 
 def init_containment_data_providers(

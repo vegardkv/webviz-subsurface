@@ -37,7 +37,7 @@ from webviz_subsurface.plugins._co2_leakage._utilities.initialization import (
     init_map_attribute_names,
     init_menu_options,
     init_surface_providers,
-    init_table_provider,
+    init_unsmry_data_providers,
     init_well_pick_provider,
     process_files,
     init_containment_data_providers,
@@ -155,7 +155,7 @@ class CO2Leakage(WebvizPluginABC):
                 plume_actual_volume_relpath,
             )
             self._unsmry_providers = (
-                init_table_provider(
+                init_unsmry_data_providers(
                     ensemble_paths,
                     unsmry_relpath,
                 )

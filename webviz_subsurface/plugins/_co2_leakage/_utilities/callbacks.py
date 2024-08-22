@@ -43,6 +43,9 @@ from webviz_subsurface.plugins._co2_leakage._utilities.surface_publishing import
     TruncatedSurfaceAddress,
     publish_and_get_surface_metadata,
 )
+from webviz_subsurface.plugins._co2_leakage._utilities.unsmry_data_provider import (
+    UnsmryDataProvider
+)
 from webviz_subsurface.plugins._map_viewer_fmu._tmp_well_pick_provider import (
     WellPickProvider,
 )
@@ -413,13 +416,13 @@ def generate_containment_figures(
     try:
         fig0 = generate_co2_volume_figure(
             table_provider,
-            table_provider.realizations(),
+            table_provider.realizations,
             co2_scale,
             containment_info,
         )
         fig1 = generate_co2_time_containment_figure(
             table_provider,
-            table_provider.realizations(),
+            table_provider.realizations,
             co2_scale,
             containment_info,
         )
@@ -433,7 +436,7 @@ def generate_containment_figures(
 
 
 def generate_unsmry_figures(
-    table_provider_unsmry: EnsembleTableProvider,
+    table_provider_unsmry: UnsmryDataProvider,
     co2_mass_scale: Union[Co2MassScale, Co2VolumeScale],
     table_provider_containment: ContainmentDataProvider,
 ) -> go.Figure:
