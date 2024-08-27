@@ -1,3 +1,5 @@
+from typing import TypedDict, List
+
 from webviz_subsurface._utils.enum_shim import StrEnum
 
 
@@ -70,3 +72,9 @@ class LayoutStyle:
         "line-height": "30px",
         "background-color": "lightgrey",
     }
+
+
+class MenuOptions(TypedDict):
+    zones: List[str]
+    regions: List[str]
+    phases: List[str]

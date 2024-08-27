@@ -3,11 +3,24 @@ from typing import Union, Tuple
 import pandas as pd
 
 from webviz_subsurface._providers import EnsembleTableProvider
-from webviz_subsurface.plugins._co2_leakage._utilities.generic import Co2MassScale, Co2VolumeScale
+from webviz_subsurface.plugins._co2_leakage._utilities.generic import (
+    Co2MassScale,
+    Co2VolumeScale,
+    MenuOptions,
+)
+
+
+_PFLOTRAN_COLNAMES = ("DATE", "FGMDS", "FGMTR", "FGMGP")
+_ECLIPSE_COLNAMES = ("DATE", "FWCD", "FGCDI", "FGCDM")
+
+
+class UnsmryDataValidationError(Exception):
+    pass
 
 
 class UnsmryDataProvider:
     def __init__(self, provider: EnsembleTableProvider):
+        UnsmryDataProvider._validate(provider)
         self._provider = provider
         (
             self._colname_date,
@@ -16,6 +29,14 @@ class UnsmryDataProvider:
             self._colname_mobile,
         ) = UnsmryDataProvider._column_subset_unsmry(provider)
         self._colname_total = "TOTAL"
+
+    @property
+    def menu_options(self) -> MenuOptions:
+        return {
+            "zones": [],
+            "regions": [],
+            "phases": ["total", "gas", "aqueous"],
+        }
 
     @property
     def colname_date(self) -> str:
@@ -69,11 +90,16 @@ class UnsmryDataProvider:
     def _column_subset_unsmry(provider: EnsembleTableProvider) -> Tuple[str, str, str, str]:
         existing = set(provider.column_names())
         # Try PFLOTRAN names
-        col_names = ("DATE", "FGMDS", "FGMTR", "FGMGP")
-        if set(col_names).issubset(existing):
-            return col_names
+        if set(_PFLOTRAN_COLNAMES).issubset(existing):
+            return _PFLOTRAN_COLNAMES
         # Try Eclipse names
-        col_names = ("DATE", "FWCD", "FGCDI", "FGCDM")
-        if set(col_names).issubset(existing):
-            return col_names
+        if set(_ECLIPSE_COLNAMES).issubset(existing):
+            return _ECLIPSE_COLNAMES
         raise KeyError(f"Could not find suitable data columns among: {', '.join(existing)}")
+
+    @staticmethod
+    def _validate(provider: EnsembleTableProvider):
+        try:
+            UnsmryDataProvider._column_subset_unsmry(provider)
+        except KeyError as e:
+            raise UnsmryDataValidationError from e

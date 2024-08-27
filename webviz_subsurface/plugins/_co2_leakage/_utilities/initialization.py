@@ -20,6 +20,7 @@ from webviz_subsurface.plugins._co2_leakage._utilities.containment_data_provider
 from webviz_subsurface.plugins._co2_leakage._utilities.generic import (
     GraphSource,
     MapAttribute,
+    MenuOptions,
 )
 from webviz_subsurface.plugins._co2_leakage._utilities.unsmry_data_provider import (
     UnsmryDataProvider
@@ -164,17 +165,14 @@ def init_menu_options(
     ensemble_roots: Dict[str, str],
     mass_table: Dict[str, ContainmentDataProvider],
     actual_volume_table: Dict[str, ContainmentDataProvider],
+    unsmry_providers: Dict[str, UnsmryDataProvider],
 ) -> Dict[str, Dict[str, Dict[str, List[str]]]]:
-    options: Dict[str, Dict[str, Dict[str, List[str]]]] = {}
+    options: Dict[str, Dict[str, MenuOptions]] = {}
     for ens in ensemble_roots.keys():
         options[ens] = {
-            GraphSource.CONTAINMENT_MASS: mass_table[ens].get_menu_options(),
-            GraphSource.CONTAINMENT_ACTUAL_VOLUME: actual_volume_table[ens].get_menu_options(),
-            GraphSource.UNSMRY: {
-                "zones": [],
-                "regions": [],
-                "phases": ["total", "gas", "aqueous"],
-            },
+            GraphSource.CONTAINMENT_MASS: mass_table[ens].menu_options,
+            GraphSource.CONTAINMENT_ACTUAL_VOLUME: actual_volume_table[ens].menu_options,
+            GraphSource.UNSMRY: unsmry_providers[ens].menu_options,
         }
     return options
 

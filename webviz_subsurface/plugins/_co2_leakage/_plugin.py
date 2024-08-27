@@ -172,6 +172,7 @@ class CO2Leakage(WebvizPluginABC):
                 ensemble_paths,
                 self._co2_table_providers,
                 self._co2_actual_volume_table_providers,
+                self._unsmry_providers,
             )
         except Exception as err:
             self._error_message = f"Plugin initialization failed: {err}"
@@ -327,6 +328,8 @@ class CO2Leakage(WebvizPluginABC):
                             co2_scale,
                             self._co2_table_providers[ensemble],
                         )
+                        figs[1] = None
+                        figs[2] = None
                 else:
                     LOGGER.warning(
                         """UNSMRY file has not been specified as input.
