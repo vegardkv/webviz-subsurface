@@ -133,12 +133,12 @@ def _init_ensemble_table_provider(
             LOGGER.warning(text)
 
     try:
-        return factory.create_from_per_realization_csv_file(
+        return factory.create_from_per_realization_arrow_file(
             ens_path, table_rel_path
         )
     except (KeyError, ValueError) as exc:
         try:
-            return factory.create_from_per_realization_arrow_file(
+            return factory.create_from_per_realization_csv_file(
                 ens_path, table_rel_path
             )
         except (KeyError, ValueError) as exc2:
