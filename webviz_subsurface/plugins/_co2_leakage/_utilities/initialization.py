@@ -85,8 +85,10 @@ def init_well_pick_provider(
 
 def init_unsmry_data_providers(
     ensemble_roots: Dict[str, str],
-    table_rel_path: str,
+    table_rel_path: Optional[str],
 ) -> Dict[str, UnsmryDataProvider]:
+    if table_rel_path is None:
+        return {}
     factory = EnsembleTableProviderFactory.instance()
     providers = {
         ens: _init_ensemble_table_provider(factory, ens, ens_path, table_rel_path)
@@ -166,14 +168,15 @@ def init_menu_options(
     mass_table: Dict[str, ContainmentDataProvider],
     actual_volume_table: Dict[str, ContainmentDataProvider],
     unsmry_providers: Dict[str, UnsmryDataProvider],
-) -> Dict[str, Dict[str, Dict[str, List[str]]]]:
-    options: Dict[str, Dict[str, MenuOptions]] = {}
+) -> Dict[str, Dict[GraphSource, MenuOptions]]:
+    options: Dict[str, Dict[GraphSource, MenuOptions]] = {}
     for ens in ensemble_roots.keys():
         options[ens] = {
             GraphSource.CONTAINMENT_MASS: mass_table[ens].menu_options,
             GraphSource.CONTAINMENT_ACTUAL_VOLUME: actual_volume_table[ens].menu_options,
-            GraphSource.UNSMRY: unsmry_providers[ens].menu_options,
         }
+        if ens in unsmry_providers:
+            options[ens][GraphSource.UNSMRY] = unsmry_providers[ens].menu_options
     return options
 
 

@@ -19,6 +19,7 @@ from webviz_subsurface.plugins._co2_leakage._utilities.generic import (
     LayoutLabels,
     LayoutStyle,
     MapAttribute,
+    MenuOptions,
 )
 
 
@@ -79,7 +80,7 @@ class ViewSettings(SettingsGroupABC):
         map_attribute_names: Dict[MapAttribute, str],
         color_scale_names: List[str],
         well_names_dict: Dict[str, List[str]],
-        menu_options: Dict[str, Dict[str, Dict[str, List[str]]]],
+        menu_options: Dict[str, Dict[GraphSource, MenuOptions]],
     ):
         super().__init__("Settings")
         self._ensemble_paths = ensemble_paths
@@ -99,6 +100,7 @@ class ViewSettings(SettingsGroupABC):
             for outer_dict in menu_options.values()
             for inner_dict in outer_dict.values()
         )
+        self._has_unsmry = GraphSource.UNSMRY in next(iter(self._menu_options.values()))
 
     def layout(self) -> List[Component]:
         return [
@@ -150,6 +152,7 @@ class ViewSettings(SettingsGroupABC):
                 ],
                 self._has_zones,
                 self._has_regions,
+                self._has_unsmry,
             ),
             ExperimentalFeaturesLayout(
                 self.register_component_unique_id(self.Ids.PLUME_THRESHOLD),
@@ -615,6 +618,7 @@ class GraphSelectorsLayout(wcc.Selectors):
         containment_ids: List[str],
         has_zones: bool,
         has_regions: bool,
+        has_unsmry: bool,
     ):
         disp_zone = "flex" if has_zones else "none"
         disp_region = "flex" if has_regions else "none"
@@ -631,6 +635,12 @@ class GraphSelectorsLayout(wcc.Selectors):
         if has_regions:
             color_options.append({"label": "Region", "value": "region"})
             mark_options.append({"label": "Region", "value": "region"})
+        source_options = [
+            GraphSource.CONTAINMENT_MASS,
+            GraphSource.CONTAINMENT_ACTUAL_VOLUME,
+        ]
+        if has_unsmry:
+            source_options.append(GraphSource.UNSMRY)
         super().__init__(
             label="Graph Settings",
             open_details=False,
@@ -638,7 +648,7 @@ class GraphSelectorsLayout(wcc.Selectors):
                 "Source",
                 wcc.Dropdown(
                     id=graph_source_id,
-                    options=list(GraphSource),
+                    options=source_options,
                     value=GraphSource.CONTAINMENT_MASS,
                     clearable=False,
                 ),

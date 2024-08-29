@@ -154,13 +154,9 @@ class CO2Leakage(WebvizPluginABC):
                 ensemble_paths,
                 plume_actual_volume_relpath,
             )
-            self._unsmry_providers = (
-                init_unsmry_data_providers(
-                    ensemble_paths,
-                    unsmry_relpath,
-                )
-                if unsmry_relpath is not None
-                else None
+            self._unsmry_providers = init_unsmry_data_providers(
+                ensemble_paths,
+                unsmry_relpath,
             )
             # Well picks
             self._well_pick_provider = init_well_pick_provider(
@@ -323,12 +319,12 @@ class CO2Leakage(WebvizPluginABC):
             elif source == GraphSource.UNSMRY:
                 if self._unsmry_providers is not None:
                     if ensemble in self._unsmry_providers:
-                        figs[0] = generate_unsmry_figures(
+                        figs[0] = None
+                        figs[1] = generate_unsmry_figures(
                             self._unsmry_providers[ensemble],
                             co2_scale,
                             self._co2_table_providers[ensemble],
                         )
-                        figs[1] = None
                         figs[2] = None
                 else:
                     LOGGER.warning(
