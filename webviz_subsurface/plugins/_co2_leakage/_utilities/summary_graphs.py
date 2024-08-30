@@ -106,13 +106,16 @@ def generate_summary_figure(
         "trapped_gas": "trapped",
     }
 
+    first_real = None
     for (real, phase), sub_df in df_containment.groupby(["REAL", "phase"]):
+        if first_real is None:
+            first_real = real
         fig.add_scatter(
             x=sub_df["date"],
             y=sub_df["amount"],
             name=f"Containment script ({phase})",
             legendgroup=_col_names[phase],
-            showlegend=bool(real == 0),
+            showlegend=bool(first_real == real),
             marker_color=_colors[_col_names[phase]],
             line_dash="dash",
         )
