@@ -319,13 +319,13 @@ class CO2Leakage(WebvizPluginABC):
             elif source == GraphSource.UNSMRY:
                 if self._unsmry_providers is not None:
                     if ensemble in self._unsmry_providers:
-                        figs[0] = None
+                        figs[0] = go.Figure()
                         figs[1] = generate_unsmry_figures(
                             self._unsmry_providers[ensemble],
                             co2_scale,
                             self._co2_table_providers[ensemble],
                         )
-                        figs[2] = None
+                        figs[2] = go.Figure()
                 else:
                     LOGGER.warning(
                         """UNSMRY file has not been specified as input.
