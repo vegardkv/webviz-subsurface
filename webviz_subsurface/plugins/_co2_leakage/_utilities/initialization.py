@@ -123,17 +123,6 @@ def _init_ensemble_table_provider(
     ens_path: str,
     table_rel_path: str,
 ) -> Optional[EnsembleTableProvider]:
-    if ens_path.endswith(".csv"):
-        max_size_mb = _find_max_file_size_mb(ens_path, table_rel_path)
-        if max_size_mb > WARNING_THRESHOLD_CSV_FILE_SIZE_MB:
-            text = (
-                "Some CSV-files are very large and might create problems when loading."
-            )
-            text += f"\n  ensembles: {ens}"
-            text += f"\n  CSV-files: {table_rel_path}"
-            text += f"\n  Max size : {max_size_mb:.2f} MB"
-            LOGGER.warning(text)
-
     try:
         return factory.create_from_per_realization_arrow_file(
             ens_path, table_rel_path
