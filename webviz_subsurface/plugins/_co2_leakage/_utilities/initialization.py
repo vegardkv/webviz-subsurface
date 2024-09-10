@@ -140,18 +140,6 @@ def _init_ensemble_table_provider(
     return None
 
 
-def _find_max_file_size_mb(ens_path: str, table_rel_path: str) -> float:
-    glob_pattern = os.path.join(ens_path, table_rel_path)
-    paths = glob.glob(glob_pattern)
-    max_size = 0.0
-    for file in paths:
-        if os.path.exists(file):
-            file_stats = os.stat(file)
-            size_in_mb = file_stats.st_size / (1024 * 1024)
-            max_size = max(max_size, size_in_mb)
-    return max_size
-
-
 def init_menu_options(
     ensemble_roots: Dict[str, str],
     mass_table: Dict[str, ContainmentDataProvider],
