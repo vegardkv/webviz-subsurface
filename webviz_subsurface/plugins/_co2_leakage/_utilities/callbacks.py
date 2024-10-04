@@ -28,6 +28,12 @@ from webviz_subsurface.plugins._co2_leakage._utilities.co2volume import (
     generate_co2_time_containment_one_realization_figure,
     generate_co2_volume_figure,
 )
+from webviz_subsurface.plugins._co2_leakage._utilities.ensemble_polygon_provider import (
+    EnsemblePolygonProvider
+)
+from webviz_subsurface.plugins._co2_leakage._utilities.ensemble_well_picks import (
+    EnsembleWellPicks
+)
 from webviz_subsurface.plugins._co2_leakage._utilities.generic import (
     Co2MassScale,
     Co2VolumeScale,
@@ -283,12 +289,13 @@ def create_map_viewports() -> Dict:
 
 # pylint: disable=too-many-arguments
 def create_map_layers(
+    realizations: List[int],
     formation: str,
     surface_data: Optional[SurfaceData],
     fault_polygon_url: Optional[str],
-    file_containment_boundary: Optional[str],
-    file_hazardous_boundary: Optional[str],
-    well_pick_provider: Optional[WellPickProvider],
+    containment_bounds_provider: Optional[EnsemblePolygonProvider],
+    haz_bounds_provider: Optional[EnsemblePolygonProvider],
+    well_pick_provider: Optional[EnsembleWellPicks],
     plume_extent_data: Optional[geojson.FeatureCollection],
     options_dialog_options: List[int],
     selected_wells: List[str],
@@ -322,72 +329,31 @@ def create_map_layers(
                 "data": fault_polygon_url,
             }
         )
+
     if (
-        file_containment_boundary is not None
+        containment_bounds_provider is not None
+        and len(realizations) > 0
         and LayoutLabels.SHOW_CONTAINMENT_POLYGON in options_dialog_options
     ):
-        layers.append(
-            {
-                "@@type": "GeoJsonLayer",
-                "name": "Containment Polygon",
-                "id": "license-boundary-layer",
-                "data": _parse_polygon_file(file_containment_boundary),
-                "stroked": False,
-                "getFillColor": [0, 172, 0, 120],
-                "visible": True,
-            }
-        )
+        layers.append(containment_bounds_provider.geosjon_layer(realizations[0]))
+
     if (
-        file_hazardous_boundary is not None
+        haz_bounds_provider is not None
+        and len(realizations) > 0
         and LayoutLabels.SHOW_HAZARDOUS_POLYGON in options_dialog_options
     ):
-        layers.append(
-            {
-                "@@type": "GeoJsonLayer",
-                "name": "Hazardous Polygon",
-                "id": "hazardous-boundary-layer",
-                "data": _parse_polygon_file(file_hazardous_boundary),
-                "stroked": False,
-                "getFillColor": [200, 0, 0, 120],
-                "visible": True,
-            }
-        )
+        layers.append(haz_bounds_provider.geosjon_layer(realizations[0]))
+
     if (
         well_pick_provider is not None
         and formation is not None
+        and len(realizations) > 0
         and LayoutLabels.SHOW_WELLS in options_dialog_options
     ):
-        well_data = dict(well_pick_provider.get_geojson(selected_wells, formation))
-        if "features" in well_data:
-            if len(well_data["features"]) == 0:
-                wellstring = "well: " if len(selected_wells) == 1 else "wells: "
-                wellstring += ", ".join(selected_wells)
-                warnings.warn(
-                    f"Combination of formation: {formation} and "
-                    f"{wellstring} not found in well picks file."
-                )
-            for i in range(len(well_data["features"])):
-                current_attribute = well_data["features"][i]["properties"]["attribute"]
-                well_data["features"][i]["properties"]["attribute"] = (
-                    " " + current_attribute
-                )
         layers.append(
-            {
-                "@@type": "GeoJsonLayer",
-                "name": "Well Picks",
-                "id": "well-picks-layer",
-                "data": well_data,
-                "visible": True,
-                "getText": "@@=properties.attribute",
-                "getTextSize": 12,
-                "getTextAnchor": "start",
-                "pointType": "circle+text",
-                "lineWidthMinPixels": 2,
-                "pointRadiusMinPixels": 2,
-                "pickable": True,
-                "parameters": {"depthTest": False},
-            }
+            well_pick_provider.geojson_layer(realizations[0], selected_wells, formation)
         )
+
     if plume_extent_data is not None:
         layers.append(
             {

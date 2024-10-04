@@ -39,7 +39,8 @@ from webviz_subsurface.plugins._co2_leakage._utilities.initialization import (
     init_surface_providers,
     init_table_provider,
     init_well_pick_provider,
-    process_files,
+    init_hazardous_boundary_providers,
+    init_containment_boundary_providers,
 )
 from webviz_subsurface.plugins._co2_leakage.views.mainview.mainview import (
     MainView,
@@ -115,17 +116,6 @@ class CO2Leakage(WebvizPluginABC):
                 ]
                 for ensemble_name in ensembles
             }
-            (
-                containment_poly_dict,
-                hazardous_poly_dict,
-                well_pick_dict,
-            ) = process_files(
-                file_containment_boundary,
-                file_hazardous_boundary,
-                well_pick_file,
-                ensemble_paths,
-            )
-            self._polygon_files = [containment_poly_dict, hazardous_poly_dict]
             self._surface_server = SurfaceImageServer.instance(app)
             self._polygons_server = FaultPolygonsServer.instance(app)
 
@@ -161,9 +151,18 @@ class CO2Leakage(WebvizPluginABC):
                 if unsmry_relpath is not None
                 else None
             )
+            self._haz_bounds_provider = init_hazardous_boundary_providers(
+                ensemble_paths,
+                file_hazardous_boundary,
+            )
+            self._containment_bounds_provider = init_containment_boundary_providers(
+                ensemble_paths,
+                file_containment_boundary,
+            )
             # Well picks
             self._well_pick_provider = init_well_pick_provider(
-                well_pick_dict,
+                ensemble_paths,
+                well_pick_file,
                 map_surface_names_to_well_pick_names,
             )
             # Phase (in case of residual trapping), zone and region options
@@ -186,9 +185,13 @@ class CO2Leakage(WebvizPluginABC):
             "unit": "kg",
         }
         self._color_tables = co2leakage_color_tables()
-        self._well_pick_names = {
-            ens: prov.well_names() if prov is not None else []
-            for ens, prov in self._well_pick_provider.items()
+        self._well_pick_names: Dict[str, List[str]] = {
+            ens: (
+                self._well_pick_provider[ens].well_names
+                if ens in self._well_pick_provider
+                else None
+            )
+            for ens in ensembles
         }
         self.add_shared_settings_group(
             ViewSettings(
@@ -526,6 +529,7 @@ class CO2Leakage(WebvizPluginABC):
                 )
             # Create layers and view bounds
             layers = create_map_layers(
+                realizations=realization,
                 formation=formation,
                 surface_data=surf_data,
                 fault_polygon_url=(
@@ -534,9 +538,9 @@ class CO2Leakage(WebvizPluginABC):
                         realization,
                     )
                 ),
-                file_containment_boundary=self._polygon_files[0][ensemble],
-                file_hazardous_boundary=self._polygon_files[1][ensemble],
-                well_pick_provider=self._well_pick_provider[ensemble],
+                containment_bounds_provider=self._containment_bounds_provider.get(ensemble, None),
+                haz_bounds_provider=self._haz_bounds_provider.get(ensemble, None),
+                well_pick_provider=self._well_pick_provider.get(ensemble, None),
                 plume_extent_data=plume_polygon,
                 options_dialog_options=options_dialog_options,
                 selected_wells=selected_wells,

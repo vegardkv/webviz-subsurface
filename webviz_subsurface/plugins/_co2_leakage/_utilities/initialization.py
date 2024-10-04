@@ -13,16 +13,18 @@ from webviz_subsurface._providers import (
     EnsembleTableProvider,
     EnsembleTableProviderFactory,
 )
-from webviz_subsurface._utils.webvizstore_functions import read_csv
 from webviz_subsurface.plugins._co2_leakage._utilities.co2volume import (
     read_menu_options,
+)
+from webviz_subsurface.plugins._co2_leakage._utilities.ensemble_polygon_provider import (
+    EnsemblePolygonProvider
+)
+from webviz_subsurface.plugins._co2_leakage._utilities.ensemble_well_picks import (
+    EnsembleWellPicks
 )
 from webviz_subsurface.plugins._co2_leakage._utilities.generic import (
     GraphSource,
     MapAttribute,
-)
-from webviz_subsurface.plugins._map_viewer_fmu._tmp_well_pick_provider import (
-    WellPickProvider,
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -60,23 +62,57 @@ def init_surface_providers(
 
 
 def init_well_pick_provider(
-    well_pick_dict: Dict[str, Optional[str]],
+    ensemble_paths: Dict[str, str],
+    well_pick_path: Optional[str],
     map_surface_names_to_well_pick_names: Optional[Dict[str, str]],
-) -> Dict[str, Optional[WellPickProvider]]:
-    well_pick_provider: Dict[str, Optional[WellPickProvider]] = {}
-    ensembles = list(well_pick_dict.keys())
-    for ens in ensembles:
-        well_pick_path = well_pick_dict[ens]
-        if well_pick_path is None:
-            well_pick_provider[ens] = None
-        else:
-            try:
-                well_pick_provider[ens] = WellPickProvider(
-                    read_csv(well_pick_path), map_surface_names_to_well_pick_names
-                )
-            except OSError:
-                well_pick_provider[ens] = None
-    return well_pick_provider
+) -> Dict[str, EnsembleWellPicks]:
+    if well_pick_path is None:
+        return {}
+
+    return {
+        ens: EnsembleWellPicks(
+            ens_p, well_pick_path, map_surface_names_to_well_pick_names
+        )
+        for ens, ens_p in ensemble_paths.items()
+    }
+
+
+def init_hazardous_boundary_providers(
+    ensemble_paths: Dict[str, str],
+    poly_path: Optional[str],
+) -> Dict[str, EnsemblePolygonProvider]:
+    if poly_path is None:
+        return {}
+
+    return {
+        ens: EnsemblePolygonProvider(
+            ens_path,
+            poly_path,
+            "Hazardous Polygon",
+            "hazardous-boundary-layer",
+            [200, 0, 0, 120],
+        )
+        for ens, ens_path in ensemble_paths.items()
+    }
+
+
+def init_containment_boundary_providers(
+    ensemble_paths: Dict[str, str],
+    poly_path: Optional[str],
+) -> Dict[str, EnsemblePolygonProvider]:
+    if poly_path is None:
+        return {}
+
+    return {
+        ens: EnsemblePolygonProvider(
+            ens_path,
+            poly_path,
+            "Containment Polygon",
+            "license-boundary-layer",
+            [0, 172, 0, 120],
+        )
+        for ens, ens_path in ensemble_paths.items()
+    }
 
 
 def init_table_provider(
@@ -142,23 +178,6 @@ def init_menu_options(
             "phases": ["total", "gas", "aqueous"],
         }
     return options
-
-
-def process_files(
-    cont_bound: Optional[str],
-    haz_bound: Optional[str],
-    well_file: Optional[str],
-    ensemble_paths: Dict[str, str],
-) -> List[Dict[str, Optional[str]]]:
-    """
-    Checks if the files exist (otherwise gives a warning and returns None)
-    Concatenates ensemble root dir and path to file if relative
-    """
-    ensembles = list(ensemble_paths.keys())
-    return [
-        {ens: _process_file(source, ensemble_paths[ens]) for ens in ensembles}
-        for source in [cont_bound, haz_bound, well_file]
-    ]
 
 
 def _process_file(file: Optional[str], ensemble_path: str) -> Optional[str]:
