@@ -538,7 +538,9 @@ class CO2Leakage(WebvizPluginABC):
                         realization,
                     )
                 ),
-                containment_bounds_provider=self._containment_bounds_provider.get(ensemble, None),
+                containment_bounds_provider=self._containment_bounds_provider.get(
+                    ensemble, None
+                ),
                 haz_bounds_provider=self._haz_bounds_provider.get(ensemble, None),
                 well_pick_provider=self._well_pick_provider.get(ensemble, None),
                 plume_extent_data=plume_polygon,

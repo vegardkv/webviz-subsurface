@@ -29,10 +29,10 @@ from webviz_subsurface.plugins._co2_leakage._utilities.co2volume import (
     generate_co2_volume_figure,
 )
 from webviz_subsurface.plugins._co2_leakage._utilities.ensemble_polygon_provider import (
-    EnsemblePolygonProvider
+    EnsemblePolygonProvider,
 )
 from webviz_subsurface.plugins._co2_leakage._utilities.ensemble_well_picks import (
-    EnsembleWellPicks
+    EnsembleWellPicks,
 )
 from webviz_subsurface.plugins._co2_leakage._utilities.generic import (
     Co2MassScale,

@@ -17,10 +17,10 @@ from webviz_subsurface.plugins._co2_leakage._utilities.co2volume import (
     read_menu_options,
 )
 from webviz_subsurface.plugins._co2_leakage._utilities.ensemble_polygon_provider import (
-    EnsemblePolygonProvider
+    EnsemblePolygonProvider,
 )
 from webviz_subsurface.plugins._co2_leakage._utilities.ensemble_well_picks import (
-    EnsembleWellPicks
+    EnsembleWellPicks,
 )
 from webviz_subsurface.plugins._co2_leakage._utilities.generic import (
     GraphSource,
@@ -99,7 +99,7 @@ def _init_hazardous_boundary_provider(
             poly_path,
             "Hazardous Polygon",
             "hazardous-boundary-layer",
-            [200, 0, 0, 120]
+            [200, 0, 0, 120],
         )
     except OSError as e:
         LOGGER.warning(

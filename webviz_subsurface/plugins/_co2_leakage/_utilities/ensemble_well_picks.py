@@ -5,8 +5,9 @@ from typing import Optional, Dict, List, Any
 
 from webviz_subsurface._utils.webvizstore_functions import read_csv
 from webviz_subsurface.plugins._co2_leakage._utilities._misc import realization_paths
-from webviz_subsurface.plugins._map_viewer_fmu._tmp_well_pick_provider import \
-    WellPickProvider
+from webviz_subsurface.plugins._map_viewer_fmu._tmp_well_pick_provider import (
+    WellPickProvider,
+)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -17,7 +18,7 @@ class EnsembleWellPicks:
         self,
         ens_path: str,
         well_picks_path: str,
-        map_surface_names_to_well_pick_names: Optional[Dict[str, str]]
+        map_surface_names_to_well_pick_names: Optional[Dict[str, str]],
     ):
         self._absolute_well_pick_provider: Optional[WellPickProvider] = None
         self._per_real_well_pick_providers: Optional[Dict[str, WellPickProvider]] = None
@@ -42,11 +43,13 @@ class EnsembleWellPicks:
         if self._absolute_well_pick_provider is not None:
             return self._absolute_well_pick_provider.well_names()
 
-        return list(dict.fromkeys(
-            w
-            for v in self._per_real_well_pick_providers.values()
-            for w in v.well_names()
-        ).keys())
+        return list(
+            dict.fromkeys(
+                w
+                for v in self._per_real_well_pick_providers.values()
+                for w in v.well_names()
+            ).keys()
+        )
 
     def geojson_layer(
         self, realization: int, selected_wells: List[str], formation: str
