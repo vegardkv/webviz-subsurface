@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 from webviz_subsurface._utils.webvizstore_functions import read_csv
 from webviz_subsurface.plugins._co2_leakage._utilities._misc import realization_paths
@@ -27,15 +27,19 @@ class EnsemblePolygonProvider:
             self._absolute_polygon = _parse_polygon_file(pp)
         else:
             self._per_real_polygons = {
-                r: _parse_polygon_file(Path(r) / pp)
-                for i, r in realization_paths(ens_path).values()
+                i: _parse_polygon_file(Path(r) / pp)
+                for i, r in realization_paths(ens_path).items()
             }
 
-    def geosjon_layer(self, realization: int):
+    def geojson_layer(self, realization: int) -> Optional[Dict[str, Any]]:
         if self._absolute_polygon is not None:
             data = self._absolute_polygon
         else:
-            data = self._per_real_polygons[realization]
+            data = self._per_real_polygons.get(realization, None)
+
+        if data is None:
+            return None
+
         return {
             "@@type": "GeoJsonLayer",
             "name": self._layer_name,
@@ -47,8 +51,12 @@ class EnsemblePolygonProvider:
         }
 
 
-def _parse_polygon_file(filename: Path) -> Dict[str, Any]:
-    df = read_csv(filename)
+def _parse_polygon_file(filename: Path) -> Optional[Dict[str, Any]]:
+    try:
+        df = read_csv(filename)
+    except OSError:
+        return None
+
     if "x" in df.columns:
         xyz = df[["x", "y"]].values
     elif "X_UTME" in df.columns:

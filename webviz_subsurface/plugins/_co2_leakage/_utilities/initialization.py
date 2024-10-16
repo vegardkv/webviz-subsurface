@@ -80,39 +80,66 @@ def init_well_pick_provider(
 def init_hazardous_boundary_providers(
     ensemble_paths: Dict[str, str],
     poly_path: Optional[str],
-) -> Dict[str, EnsemblePolygonProvider]:
+) -> Dict[str, Optional[EnsemblePolygonProvider]]:
     if poly_path is None:
         return {}
 
     return {
-        ens: EnsemblePolygonProvider(
-            ens_path,
+        ens: _init_hazardous_boundary_provider(ens_path, poly_path)
+        for ens, ens_path in ensemble_paths.items()
+    }
+
+
+def _init_hazardous_boundary_provider(
+    ensemble_path: str, poly_path: str
+) -> Optional[EnsemblePolygonProvider]:
+    try:
+        return EnsemblePolygonProvider(
+            ensemble_path,
             poly_path,
             "Hazardous Polygon",
             "hazardous-boundary-layer",
-            [200, 0, 0, 120],
+            [200, 0, 0, 120]
         )
-        for ens, ens_path in ensemble_paths.items()
-    }
+    except OSError as e:
+        LOGGER.warning(
+            f"Failed to create hazardous boundary provider for ensemble path:"
+            f" '{ensemble_path}' and poly path '{poly_path}': {e}"
+        )
+        return None
 
 
 def init_containment_boundary_providers(
     ensemble_paths: Dict[str, str],
     poly_path: Optional[str],
-) -> Dict[str, EnsemblePolygonProvider]:
+) -> Dict[str, Optional[EnsemblePolygonProvider]]:
     if poly_path is None:
         return {}
 
     return {
-        ens: EnsemblePolygonProvider(
-            ens_path,
+        ens: _init_containment_boundary_provider(ens_path, poly_path)
+        for ens, ens_path in ensemble_paths.items()
+    }
+
+
+def _init_containment_boundary_provider(
+    ensemble_path: str,
+    poly_path: str,
+) -> Optional[EnsemblePolygonProvider]:
+    try:
+        return EnsemblePolygonProvider(
+            ensemble_path,
             poly_path,
             "Containment Polygon",
             "license-boundary-layer",
             [0, 172, 0, 120],
         )
-        for ens, ens_path in ensemble_paths.items()
-    }
+    except OSError as e:
+        LOGGER.warning(
+            "Failed to create containment boundary provider for ensemble path:"
+            f" '{ensemble_path}' and poly path '{poly_path}': {e}"
+        )
+        return None
 
 
 def init_table_provider(

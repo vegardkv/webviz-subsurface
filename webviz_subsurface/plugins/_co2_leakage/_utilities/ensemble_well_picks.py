@@ -89,7 +89,7 @@ class EnsembleWellPicks:
 
 
 def _try_get_well_pick_provider(
-    p: Path, name_mapping: Optional[str, str]
+    p: Path, name_mapping: Optional[Dict[str, str]]
 ) -> Optional[WellPickProvider]:
     try:
         return WellPickProvider(read_csv(p), name_mapping)

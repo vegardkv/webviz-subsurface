@@ -335,14 +335,18 @@ def create_map_layers(
         and len(realizations) > 0
         and LayoutLabels.SHOW_CONTAINMENT_POLYGON in options_dialog_options
     ):
-        layers.append(containment_bounds_provider.geosjon_layer(realizations[0]))
+        layer = containment_bounds_provider.geojson_layer(realizations[0])
+        if layer is not None:
+            layers.append(layer)
 
     if (
         haz_bounds_provider is not None
         and len(realizations) > 0
         and LayoutLabels.SHOW_HAZARDOUS_POLYGON in options_dialog_options
     ):
-        layers.append(haz_bounds_provider.geosjon_layer(realizations[0]))
+        layer = haz_bounds_provider.geojson_layer(realizations[0])
+        if layer is not None:
+            layers.append(layer)
 
     if (
         well_pick_provider is not None
@@ -411,40 +415,6 @@ def generate_unsmry_figures(
             table_provider_containment.realizations(),
         ),
     )
-
-
-def _parse_polygon_file(filename: str) -> Dict[str, Any]:
-    df = read_csv(filename)
-    if "x" in df.columns:
-        xyz = df[["x", "y"]].values
-    elif "X_UTME" in df.columns:
-        if "POLY_ID" in df.columns:
-            xyz = [gf[["X_UTME", "Y_UTMN"]].values for _, gf in df.groupby("POLY_ID")]
-        else:
-            xyz = df[["X_UTME", "Y_UTMN"]].values
-    else:
-        # Attempt to use the first two columns as the x and y coordinates
-        xyz = df.values[:, :2]
-    if isinstance(xyz, list):
-        poly_type = "MultiPolygon"
-        coords = [[arr.tolist()] for arr in xyz]
-    else:
-        poly_type = "Polygon"
-        coords = [xyz.tolist()]
-    as_geojson = {
-        "type": "FeatureCollection",
-        "features": [
-            {
-                "type": "Feature",
-                "properties": {},
-                "geometry": {
-                    "type": poly_type,
-                    "coordinates": coords,
-                },
-            }
-        ],
-    }
-    return as_geojson
 
 
 def process_visualization_info(
