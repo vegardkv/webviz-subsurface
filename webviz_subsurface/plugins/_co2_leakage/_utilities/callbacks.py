@@ -350,9 +350,11 @@ def create_map_layers(
         and len(realizations) > 0
         and LayoutLabels.SHOW_WELLS in options_dialog_options
     ):
-        layers.append(
-            well_pick_provider.geojson_layer(realizations[0], selected_wells, formation)
+        layer = well_pick_provider.geojson_layer(
+            realizations[0], selected_wells, formation
         )
+        if layer is not None:
+            layers.append(layer)
 
     if plume_extent_data is not None:
         layers.append(

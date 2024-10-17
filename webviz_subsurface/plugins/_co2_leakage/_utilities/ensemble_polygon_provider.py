@@ -21,23 +21,23 @@ class EnsemblePolygonProvider:
         self._layer_color = layer_color
 
         self._absolute_polygon = None
-        self._per_real_polygons = None
+        self._per_real_polygons = {}
 
         if pp.is_absolute():
             self._absolute_polygon = _parse_polygon_file(pp)
         else:
-            self._per_real_polygons = {
-                i: _parse_polygon_file(Path(r) / pp)
-                for i, r in realization_paths(ens_path).items()
-            }
+            for i, r in realization_paths(ens_path).items():
+                gj = _parse_polygon_file(Path(r) / pp)
+                if gj is None:
+                    continue
+                self._per_real_polygons[i] = gj
 
     def geojson_layer(self, realization: int) -> Optional[Dict[str, Any]]:
         if self._absolute_polygon is not None:
             data = self._absolute_polygon
+        elif realization in self._per_real_polygons:
+            data = self._per_real_polygons[realization]
         else:
-            data = self._per_real_polygons.get(realization, None)
-
-        if data is None:
             return None
 
         return {

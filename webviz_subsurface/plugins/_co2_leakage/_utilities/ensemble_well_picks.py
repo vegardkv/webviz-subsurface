@@ -20,7 +20,7 @@ class EnsembleWellPicks:
         map_surface_names_to_well_pick_names: Optional[Dict[str, str]],
     ):
         self._absolute_well_pick_provider: Optional[WellPickProvider] = None
-        self._per_real_well_pick_providers: Optional[Dict[str, WellPickProvider]] = None
+        self._per_real_well_pick_providers: Dict[int, WellPickProvider] = {}
 
         if Path(well_picks_path).is_absolute():
             self._absolute_well_pick_provider = _try_get_well_pick_provider(
@@ -29,13 +29,15 @@ class EnsembleWellPicks:
             )
         else:
             realizations = realization_paths(ens_path)
-            self._per_real_well_pick_providers = {
-                r: WellPickProvider(
-                    read_csv(r_path / well_picks_path),
-                    map_surface_names_to_well_pick_names,
-                )
-                for r, r_path in realizations.items()
-            }
+            self._per_real_well_pick_providers.update(
+                {
+                    r: WellPickProvider(
+                        read_csv(r_path / well_picks_path),
+                        map_surface_names_to_well_pick_names,
+                    )
+                    for r, r_path in realizations.items()
+                }
+            )
 
     @cached_property
     def well_names(self) -> List[str]:
@@ -52,11 +54,13 @@ class EnsembleWellPicks:
 
     def geojson_layer(
         self, realization: int, selected_wells: List[str], formation: str
-    ) -> Dict[str, Any]:
+    ) -> Optional[Dict[str, Any]]:
         if self._absolute_well_pick_provider is not None:
             wpp = self._absolute_well_pick_provider
-        else:
+        elif realization in self._per_real_well_pick_providers:
             wpp = self._per_real_well_pick_providers[realization]
+        else:
+            return None
 
         well_data = dict(wpp.get_geojson(selected_wells, formation))
         if "features" in well_data:

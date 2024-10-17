@@ -189,7 +189,7 @@ class CO2Leakage(WebvizPluginABC):
             ens: (
                 self._well_pick_provider[ens].well_names
                 if ens in self._well_pick_provider
-                else None
+                else []
             )
             for ens in ensembles
         }
