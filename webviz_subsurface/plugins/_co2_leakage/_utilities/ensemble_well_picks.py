@@ -29,15 +29,16 @@ class EnsembleWellPicks:
             )
         else:
             realizations = realization_paths(ens_path)
-            self._per_real_well_pick_providers.update(
-                {
-                    r: WellPickProvider(
+            for r, r_path in realizations.items():
+                try:
+                    self._per_real_well_pick_providers[r] = WellPickProvider(
                         read_csv(r_path / well_picks_path),
                         map_surface_names_to_well_pick_names,
                     )
-                    for r, r_path in realizations.items()
-                }
-            )
+                except (FileNotFoundError, OSError) as e:
+                    LOGGER.warning(
+                        f"Failed to find well picks for realization {r} at {r_path}: {e}"
+                    )
 
     @cached_property
     def well_names(self) -> List[str]:
